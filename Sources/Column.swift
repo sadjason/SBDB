@@ -8,157 +8,262 @@
 
 import Foundation
 
-public enum Column {
+// MARK: - Column
+
+struct Column: Expression {
+    let name: String
+    var sql: String { name }
+
+    init(_ name: String) {
+        self.name = name
+    }
+}
+
+// MARK: Comparable & Equable Operators
+
+let kParam = ParameterPlaceholder
+
+extension Column {
+
+    static func > (column: Column, value: BaseValueConvertible) -> ConditionExpression {
+        ConditionExpression(sql: "\(column.name) > \(kParam)", params: [value])
+    }
+
+    static func >= (column: Column, value: BaseValueConvertible) -> ConditionExpression {
+        ConditionExpression(sql: "\(column.name) >= \(kParam)", params: [value])
+    }
+
+    static func < (column: Column, value: BaseValueConvertible) -> ConditionExpression {
+        ConditionExpression(sql: "\(column.name) < \(kParam)", params: [value])
+    }
+
+    static func <= (column: Column, value: BaseValueConvertible) -> ConditionExpression {
+        ConditionExpression(sql: "\(column.name) <= \(kParam)", params: [value])
+    }
+
+    static func == (column: Column, value: BaseValueConvertible) -> ConditionExpression {
+        ConditionExpression(sql: "\(column.name) == \(kParam)", params: [value])
+    }
+
+    static func != (column: Column, value: BaseValueConvertible) -> ConditionExpression {
+        ConditionExpression(sql: "\(column.name) != \(kParam)", params: [value])
+    }
+}
+
+extension Column {
+
+    static func > (lhs: Column, rhs: Column) -> ConditionExpression {
+        ConditionExpression(sql: "\(lhs.name) > \(rhs.name)")
+    }
+
+    static func >= (lhs: Column, rhs: Column) -> ConditionExpression {
+        ConditionExpression(sql: "\(lhs.name) >= \(rhs.name)")
+    }
+
+    static func < (lhs: Column, rhs: Column) -> ConditionExpression {
+        ConditionExpression(sql: "\(lhs.name) < \(rhs.name)")
+    }
+
+    static func <= (lhs: Column, rhs: Column) -> ConditionExpression {
+        ConditionExpression(sql: "\(lhs.name) <= \(rhs.name)")
+    }
+
+    static func == (lhs: Column, rhs: Column) -> ConditionExpression {
+        ConditionExpression(sql: "\(lhs.name) == \(rhs.name)")
+    }
+
+    static func != (lhs: Column, rhs: Column) -> ConditionExpression {
+        ConditionExpression(sql: "\(lhs.name) != \(rhs.name)")
+    }
+}
+
+// MARK: Basic Column Operators
+
+extension Column {
+    func `in`(_ values: [BaseValueConvertible]) -> ConditionExpression {
+        let paramPlaceholders = Array<String>(repeating: kParam, count: values.count).joined(separator: ",")
+        let sql = "\(name) in (\(paramPlaceholders))"
+        return ConditionExpression(sql: sql, params: values)
+    }
+
+    func notIn(_ values: [BaseValueConvertible]) -> ConditionExpression {
+        let paramPlaceholders = Array<String>(repeating: kParam, count: values.count).joined(separator: ",")
+        let sql = "\(name) not in (\(paramPlaceholders))"
+        return ConditionExpression(sql: sql, params: values)
+    }
+
+    func between(_ value1: BaseValueConvertible, and value2: BaseValueConvertible) -> ConditionExpression {
+        ConditionExpression(sql: "\(name) between \(kParam) and \(kParam)", params: [value1, value2])
+    }
+
+    func notBetween(_ value1: BaseValueConvertible, and value2: BaseValueConvertible) -> ConditionExpression {
+        ConditionExpression(sql: "\(name) not between \(kParam) and \(kParam)", params: [value1, value2])
+    }
+
+    func isNull() -> ConditionExpression {
+        ConditionExpression(sql: "\(name) isnull")
+    }
+
+    func notNull() -> ConditionExpression {
+        ConditionExpression(sql: "\(name) notnull")
+    }
+}
+
+// MARK: - ColumnIndexed
+
+/// https://www.sqlite.org/syntax/indexed-column.html
+public struct ColumnIndexed: Expression {
+    let columnName: String
+    let collate: Base.Collate?
+    let order: Base.Order?
+
+    var sql: String {
+        var str = columnName
+        str += (collate != nil ? " collate \(collate!.sql)" : "")
+        str += (order != nil ? order!.sql : "")
+        return str
+    }
+}
+
+// MARK: - ColumnDefinition
+
+/// https://www.sqlite.org/syntax/column-def.html
+public final class ColumnDefinition {
 
     enum Constraint {
-        enum DefaultValue {
-            case number(Int64)
-            case double(Double)
-            // TODO: support expr default
-        }
-
-        case primaryKey(Order?, ConflictResolution?, Bool?)
-        case notNull(ConflictResolution?)
-        case unique(ConflictResolution?)
-        case `default`(DefaultValue)
-        case collate(CollateName)
-        // TODO: check support
-        // TODO: foreign key support
-
-        var clause: String {
-            let onConflictPhrase = "ON CONFLICT"
-
-            switch self {
-            case let .primaryKey(order, conflictResolution, autoIncrement):
-                var str = "PRIMARY KEY"
-                if let r = order {
-                    str += " \(r.rawValue)"
-                }
-                if let c = conflictResolution {
-                    str += " \(onConflictPhrase) \(c.rawValue)"
-                }
-                if let a = autoIncrement, a {
-                    str += " AUTOINCREMENT"
-                }
-                return str
-            case let .notNull(conflictResolution):
-                var str = "NOT NULL"
-                if let c = conflictResolution {
-                    str += " \(onConflictPhrase) \(c.rawValue)"
-                }
-                return str
-            case let .unique(conflictResolution):
-                var ret = "UNIQUE"
-                if let c = conflictResolution {
-                    ret += " \(onConflictPhrase) \(c.rawValue)"
-                }
-                return ret
-            case .default:
-                return "defaultValue"
-            case .collate:
-                return "collate"
-            }
-        }
+        case primaryKey(Base.Order?, Base.Conflict?, Bool?)
+        case notNull(Base.Conflict?)
+        case unique(Base.Conflict?)
+        case collate(Base.Collate)
+        // TODO: support check
+        // TODO: support foreign key
     }
 
-    /// https://www.sqlite.org/datatype3.html
-    public enum DataType: String {
-        case text       = "TEXT"
-        case numeric    = "NUMERIC"
-        case integer    = "INTEGER"
-        case real       = "REAL"
-        case blob       = "BLOB"
-    }
+    public typealias DataType = Base.AffinityType
 
-    enum ConstraintType: Int, Comparable {
-        static func < (lhs: Column.ConstraintType, rhs: Column.ConstraintType) -> Bool {
+    fileprivate enum ConstraintType: Int, Comparable {
+        static func < (lhs: ConstraintType, rhs: ConstraintType) -> Bool {
             lhs.rawValue < rhs.rawValue
         }
 
         case primary, notNull, unique, `default`, collate
     }
 
-    /// https://www.sqlite.org/syntax/column-def.html
-    public class Definition {
-        let name: String
-        let type: DataType?
+    fileprivate var constraints = [ConstraintType : Constraint]()
+    fileprivate let name: String
+    fileprivate let type: DataType?
 
-        fileprivate var constraints = [ConstraintType : Constraint]()
+    // TODO: 对于默认值，是写在定义式里，还是在构造器中，哪个更合适？
+    init(_ name: String, _ type: DataType? = nil) {
+        self.name = name
+        self.type = type
+    }
 
-        // TODO: 对于默认值，是写在定义式里，还是在构造器中，哪个更合适？
-        init(_ name: String, _ type: DataType? = nil) {
-            self.name = name
-            self.type = type
-        }
-
-        public func primaryKey(
-            autoIncrement: Bool = false,
-            onConflict: ConflictResolution? = nil,
-            order: Order? = nil) -> Definition
-        {
-            if autoIncrement {
-                guard let t = type, t == .integer else {
-                    assert(false, "AUTOINCREMENT is only allowed on an INTEGER PRIMARY KEY without DESC")
-                    return self
-                }
-                guard order == nil || order! == .asc else {
-                    assert(false, "AUTOINCREMENT is only allowed on an INTEGER PRIMARY KEY without DESC")
-                    return self
-                }
+    @discardableResult
+    public func primaryKey(
+        autoIncrement: Bool = false,
+        onConflict: Base.Conflict? = nil,
+        order: Base.Order? = nil) -> Self
+    {
+        if autoIncrement {
+            guard let t = type, t == .integer else {
+                assert(false, "AUTOINCREMENT is only allowed on an INTEGER PRIMARY KEY without DESC")
+                return self
             }
-            constraints[.primary] = .primaryKey(order, onConflict, autoIncrement)
-            // set `not null` for primary key
-            if constraints[.notNull] == nil {
-                _ = notNull()
+            guard order == nil || order! == .asc else {
+                assert(false, "AUTOINCREMENT is only allowed on an INTEGER PRIMARY KEY without DESC")
+                return self
             }
-            return self
         }
-
-        public func notNull(onConflict: ConflictResolution? = nil) -> Definition {
-            constraints[.notNull] = .notNull(onConflict)
-            return self
+        constraints[.primary] = .primaryKey(order, onConflict, autoIncrement)
+        // set `not null` for primary key
+        if constraints[.notNull] == nil {
+            _ = notNull()
         }
+        return self
+    }
 
-        public func unique(onConflict: ConflictResolution? = nil) -> Definition {
-            constraints[.unique] = .unique(onConflict)
-            return self
-        }
+    @discardableResult
+    public func notNull(onConflict: Base.Conflict? = nil) -> Self {
+        constraints[.notNull] = .notNull(onConflict)
+        return self
+    }
 
+    @discardableResult
+    public func unique(onConflict: Base.Conflict? = nil) -> Self {
+        constraints[.unique] = .unique(onConflict)
+        return self
+    }
 
-        public func `default`(value: String) -> Definition {
-            // constraints[.default] = .default(value)
-            return self
-        }
+    @discardableResult
+    public func collate(name: Base.Collate? = nil) -> Self {
+        constraints[.collate] = .collate(name!)
+        return self
+    }
+}
 
-        public func collate(name: CollateName? = nil) -> Definition {
-            constraints[.collate] = .collate(name!)
-            return self
-        }
+extension ColumnDefinition.Constraint: Expression {
+    var sql: String {
+        let onConflictPhrase = "on conflict"
 
-        var sql: String {
-            var ret = name
-            if let type = type {
-                ret += " \(type.rawValue)"
+        switch self {
+        case let .primaryKey(order, conflictResolution, autoIncrement):
+            var str = "primary key"
+            if let r = order {
+                str += " \(r.sql)"
             }
-
-            constraints.keys.sorted().forEach { key in
-                if case .unique = key, constraints.keys.contains(.primary) {
-                    return
-                }
-                ret += " \(constraints[key]!.clause)"
+            if let c = conflictResolution {
+                str += " \(onConflictPhrase) \(c.sql)"
+            }
+            if let a = autoIncrement, a {
+                str += " autoIncrement"
+            }
+            return str
+        case let .notNull(conflictResolution):
+            var str = "not null"
+            if let c = conflictResolution {
+                str += " \(onConflictPhrase) \(c.sql)"
+            }
+            return str
+        case let .unique(conflictResolution):
+            var ret = "unique"
+            if let c = conflictResolution {
+                ret += " \(onConflictPhrase) \(c.sql)"
             }
             return ret
+        case .collate:
+            return "collate"
         }
     }
+}
 
-    /// https://www.sqlite.org/syntax/indexed-column.html
-    public struct Indexed {
-        let columnName: String
-        let collateName: CollateName
-        let order: Order?
+extension ColumnDefinition : Expression {
+    var sql: String {
+        var ret = name
+        if let type = type {
+            ret += " \(type.rawValue)"
+        }
+
+        constraints.keys.sorted().forEach { key in
+            if case .unique = key, constraints.keys.contains(.primary) {
+                return
+            }
+            ret += " \(constraints[key]!.sql)"
+        }
+        return ret
     }
 }
 
-extension Column.Definition : CustomDebugStringConvertible {
-    public var debugDescription: String { sql }
+// MARK: - ColumnAssignment
+
+struct ColumnAssignment : SingleParameterExpression {
+    let name: String
+    let baseValue: BaseValueConvertible
+
+    var sql: String { "\(name) = ? " }
+    init(name: String, value: BaseValueConvertible) {
+        self.name = name
+        self.baseValue = value
+    }
 }
+

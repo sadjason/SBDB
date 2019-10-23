@@ -11,8 +11,8 @@ import SQLite3
 
 public class Database {
 
-    private var db: OpaquePointer! = nil
-    private var cachedStatements = [String: Statement]()
+    var db: OpaquePointer! = nil
+    private var cachedStatements = [String: RawStatement]()
 
     /// TODO: 暂时不支持 tempory 数据库的建立，也不支持 flags
 
@@ -43,7 +43,7 @@ public class Database {
     func exec(sql: String) throws {
         var stmt = cachedStatements[sql]
         if stmt == nil {
-            stmt = try Statement(sql: sql, db: db!)
+            stmt = try RawStatement(sql: sql, db: db!)
             if stmt != nil {
                 cachedStatements[sql] = stmt
             } else {
@@ -55,17 +55,11 @@ public class Database {
 
         print("exec sql succeed: \(sql)")
     }
-
-    public enum TransactionMode: String {
-        case defered    = "DEFERRED"
-        case immediate  = "IMMEDIATE"
-        case exclusive  = "EXCLUSIVE"
-    }
 }
 
 extension Database {
-    func beginTransactiton(with mode: TransactionMode = .exclusive) throws {
-        try exec(sql: "BEGIN TRANSACTION \(mode.rawValue)")
+    func beginTransactiton(with mode: Base.TransactionMode = .exclusive) throws {
+        try exec(sql: "BEGIN TRANSACTION \(mode.sql)")
     }
 
     func commitTransaction() throws {

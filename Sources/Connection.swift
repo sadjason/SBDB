@@ -22,9 +22,7 @@ enum SQLiteError : Error {
     case bindFalied(Reason, Code)
 }
 
-enum SQLite { }
-
-extension SQLite {
+extension Base {
     static func lastErrorMessage(of db: OpaquePointer) -> String {
         // `sqlite3_errmsg(nil)` return "out of memory", so do not worry about `db`
         String(cString: sqlite3_errmsg(db))

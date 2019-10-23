@@ -10,17 +10,38 @@ import Foundation
 
 public enum Table {
 
-    public enum Constraint {
-        case primaryKey(Array<Column.Indexed>, ConflictResolution)
-        case unique(Array<Column.Indexed>, ConflictResolution)
-        // TODO: foreign key support
-        // TODO: check support
+    public enum Constraint: Expression {
+        case primaryKey(Array<ColumnIndexed>, Base.Conflict?)
+        case unique(Array<ColumnIndexed>, Base.Conflict?)
+
+        // TODO: support foreign key
+        // TODO: support check
+        // TOOD: support index
+
+        var sql: String {
+            let command: String
+            let indexedColumns: Array<ColumnIndexed>
+            let onConflict: Base.Conflict?
+            switch self {
+            case let .primaryKey(value1, value2):
+                (command, indexedColumns, onConflict) = ("primary key", value1, value2)
+            case let .unique(value1, value2):
+                (command, indexedColumns, onConflict) = ("unique", value1, value2)
+            }
+            let indexedColumnStr = indexedColumns.map { $0.sql }.joined(separator: ",")
+            var str = "\(command) (\(indexedColumnStr))"
+            if let onConflict = onConflict {
+                str += "on conflict \(onConflict.sql)"
+            }
+            return str
+        }
     }
 
-    public class Definition {
+    public class Definition: ParameterExpression {
 
         let name: String
-        var columns: [Column.Definition] = []
+        var columns: [ColumnDefinition] = []
+        var constraints: [Constraint] = []
 
         public var ifNotExists: Bool?
         public var withoutRowId: Bool?
@@ -29,17 +50,54 @@ public enum Table {
             self.name = name
         }
 
-        public func addColumn(_ name: String, type: Column.DataType?) -> Column.Definition {
-            let column = Column.Definition(name, type)
+        @discardableResult
+        public func addColumn(_ name: String, type: ColumnDefinition.DataType?) -> ColumnDefinition {
+            let column = ColumnDefinition(name, type)
             columns.append(column)
             return column
         }
 
-
-        var sql: String {
-            "CREATE TABLE"
+        public func setPrimaryKey(_ indexedColumns: Array<ColumnIndexed>, onConflict: Base.Conflict?) {
+            constraints.append(.primaryKey(indexedColumns, onConflict))
         }
 
-    //    public addIndex(_ name: String) -?
+        public func unique(_ indexedColumns: Array<ColumnIndexed>, onConflict: Base.Conflict?) {
+            constraints.append(.primaryKey(indexedColumns, onConflict))
+        }
+    }
+}
+
+extension Table.Definition : Executable {
+
+    var sql: String {
+        var str = "create table"
+        if let yesOrNo = ifNotExists, yesOrNo {
+            str += " if not exists"
+        }
+        str += "  \(name) ("
+        str += columns.map { $0.sql }.joined(separator: ",")
+        if constraints.count > 0 {
+            str += ","
+            str += constraints.map { $0.sql }.joined(separator: ",")
+        }
+        str += ")"
+        if let yesOrNo = withoutRowId, yesOrNo {
+            str += " without rowId"
+        }
+        return str
+    }
+
+    var params: [BaseValueConvertible]? { nil }
+
+    func exec(in database: Database) throws {
+        try database.exec(sql: sql)
+    }
+}
+
+public extension TableEncodable {
+    static func create(in database: Database, closure: (Table.Definition) -> Void) throws {
+        let definition = Table.Definition(name: tableName)
+        closure(definition)
+        try definition.exec(in: database)
     }
 }
