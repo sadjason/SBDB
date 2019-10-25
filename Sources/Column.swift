@@ -113,7 +113,7 @@ extension Column {
 
 /// https://www.sqlite.org/syntax/indexed-column.html
 public struct ColumnIndexed: Expression {
-    let columnName: String
+    let columnName: Base.ColumnName
     let collate: Base.Collate?
     let order: Base.Order?
 

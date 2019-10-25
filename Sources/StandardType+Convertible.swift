@@ -1,5 +1,5 @@
 //
-//  BasicData+BaseValueConvertible.swift
+//  BaseTypes.swift
 //  SQLite
 //
 //  Created by zhangwei on 2019/10/23.
@@ -247,5 +247,26 @@ extension Data: BaseValueConvertible {
         default:
             return nil
         }
+    }
+}
+
+extension Base {
+    
+    struct Null: BaseValueConvertible {
+        var baseValue: BaseValue {
+            BaseValue(storage: .null)
+        }
+        init?(from dbValue: BaseValue) {
+            switch dbValue.storage {
+            case .null: return
+            default: return nil
+            }
+        }
+
+        fileprivate static let null = Null.init(from: BaseValue(storage: .null))!
+    }
+
+    static var null: Null {
+        Null.null
     }
 }

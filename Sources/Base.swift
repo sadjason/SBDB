@@ -60,3 +60,11 @@ extension Base {
         case exclusive
     }
 }
+
+extension Base {
+
+    public typealias ColumnName = String
+    public typealias ColumnValue = BaseValueConvertible
+
+    public typealias RowStorage = Dictionary<ColumnName, ColumnValue>
+}

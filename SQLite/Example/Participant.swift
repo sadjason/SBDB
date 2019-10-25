@@ -16,6 +16,4 @@ struct Participant: Identifiable {
     let conversationId: Int64
 }
 
-extension Participant : Equatable { }
-
-extension Participant : TableEncodable { }
+extension Participant : TableCodable, Equatable { }

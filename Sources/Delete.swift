@@ -64,7 +64,7 @@ extension DeleteStatement: Executable {
 
 extension TableEncodable {
 
-    static var delete: DeleteStatement<Self> {
+    static func delete() -> DeleteStatement<Self> {
         DeleteStatement<Self>()
     }
 }

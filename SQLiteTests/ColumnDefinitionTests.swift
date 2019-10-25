@@ -20,21 +20,21 @@ class ColumnDefinitionTests: XCTestCase {
     }
 
     func testColumnName() {
-        XCTAssert("id" == Column.Definition("id").sql.lowercased())
+        XCTAssert("id" == ColumnDefinition("id").sql.lowercased())
     }
 
     func testColumnDataType() {
-        XCTAssert("id \(Column.DataType.text.rawValue)" == Column.Definition("id", .text).sql)
-        XCTAssert("id \(Column.DataType.numeric.rawValue)" == Column.Definition("id", .numeric).sql)
-        XCTAssert("id \(Column.DataType.integer.rawValue)" == Column.Definition("id", .integer).sql)
-        XCTAssert("id \(Column.DataType.real.rawValue)" == Column.Definition("id", .real).sql)
-        XCTAssert("id \(Column.DataType.blob.rawValue)" == Column.Definition("id", .blob).sql)
+        XCTAssert("id \(ColumnDefinition.DataType.text.rawValue)" == ColumnDefinition("id", .text).sql)
+        XCTAssert("id \(ColumnDefinition.DataType.numeric.rawValue)" == ColumnDefinition("id", .numeric).sql)
+        XCTAssert("id \(ColumnDefinition.DataType.integer.rawValue)" == ColumnDefinition("id", .integer).sql)
+        XCTAssert("id \(ColumnDefinition.DataType.real.rawValue)" == ColumnDefinition("id", .real).sql)
+        XCTAssert("id \(ColumnDefinition.DataType.blob.rawValue)" == ColumnDefinition("id", .blob).sql)
     }
 
     func testColumnPrimaryKey() {
-        XCTAssert("id \(Column.DataType.integer.rawValue) PRIMARY KEY NOT NULL" == Column.Definition("id", .integer).primaryKey().sql)
-        XCTAssert("id \(Column.DataType.integer.rawValue) PRIMARY KEY AUTOINCREMENT NOT NULL" == Column.Definition("id", .integer).primaryKey(autoIncrement: true).sql)
-        XCTAssert("id \(Column.DataType.integer.rawValue) PRIMARY KEY ASC AUTOINCREMENT NOT NULL" == Column.Definition("id", .integer).primaryKey(autoIncrement: true, onConflict: nil, order: .asc).sql)
+        XCTAssert("id \(ColumnDefinition.DataType.integer.rawValue) PRIMARY KEY NOT NULL" == ColumnDefinition("id", .integer).primaryKey().sql)
+        XCTAssert("id \(ColumnDefinition.DataType.integer.rawValue) PRIMARY KEY AUTOINCREMENT NOT NULL" == ColumnDefinition("id", .integer).primaryKey(autoIncrement: true).sql)
+        XCTAssert("id \(ColumnDefinition.DataType.integer.rawValue) PRIMARY KEY ASC AUTOINCREMENT NOT NULL" == ColumnDefinition("id", .integer).primaryKey(autoIncrement: true, onConflict: nil, order: .asc).sql)
     }
 
 //    func testColumnUnique() {

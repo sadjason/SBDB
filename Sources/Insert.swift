@@ -23,7 +23,7 @@ class InsertStatement<T: TableEncodable> {
 
     let target: T
     let type: `Type`
-    fileprivate var _encoded: TableEncoder.Storage?
+    fileprivate var _encoded: Base.RowStorage?
 
     init(_ target: T, withType type: Type = .insert) {
         self.target = target
@@ -37,7 +37,7 @@ extension InsertStatement: WriteExecutable {
         var chunk = "\(type.sql) into \(T.tableName) "
 
         if _encoded == nil {
-            _encoded = try? TableEncoder.encode(target)
+            _encoded = try? TableEncoder().encode(target)
         }
 
         let keys: Array<String> = _encoded?.keys.sorted() ?? []
@@ -49,7 +49,7 @@ extension InsertStatement: WriteExecutable {
 
     var params: [BaseValueConvertible]? {
         if _encoded == nil {
-            _encoded = try? TableEncoder.encode(target)
+            _encoded = try? TableEncoder().encode(target)
         }
         guard let encoded = _encoded else {
             assert(false, "record failed")
