@@ -25,87 +25,87 @@ let kParam = ParameterPlaceholder
 
 extension Column {
 
-    static func > (column: Column, value: BaseValueConvertible) -> ConditionExpression {
-        ConditionExpression(sql: "\(column.name) > \(kParam)", params: [value])
+    static func > (column: Column, value: BaseValueConvertible) -> Condition {
+        Condition(sql: "\(column.name) > \(kParam)", params: [value])
     }
 
-    static func >= (column: Column, value: BaseValueConvertible) -> ConditionExpression {
-        ConditionExpression(sql: "\(column.name) >= \(kParam)", params: [value])
+    static func >= (column: Column, value: BaseValueConvertible) -> Condition {
+        Condition(sql: "\(column.name) >= \(kParam)", params: [value])
     }
 
-    static func < (column: Column, value: BaseValueConvertible) -> ConditionExpression {
-        ConditionExpression(sql: "\(column.name) < \(kParam)", params: [value])
+    static func < (column: Column, value: BaseValueConvertible) -> Condition {
+        Condition(sql: "\(column.name) < \(kParam)", params: [value])
     }
 
-    static func <= (column: Column, value: BaseValueConvertible) -> ConditionExpression {
-        ConditionExpression(sql: "\(column.name) <= \(kParam)", params: [value])
+    static func <= (column: Column, value: BaseValueConvertible) -> Condition {
+        Condition(sql: "\(column.name) <= \(kParam)", params: [value])
     }
 
-    static func == (column: Column, value: BaseValueConvertible) -> ConditionExpression {
-        ConditionExpression(sql: "\(column.name) == \(kParam)", params: [value])
+    static func == (column: Column, value: BaseValueConvertible) -> Condition {
+        Condition(sql: "\(column.name) == \(kParam)", params: [value])
     }
 
-    static func != (column: Column, value: BaseValueConvertible) -> ConditionExpression {
-        ConditionExpression(sql: "\(column.name) != \(kParam)", params: [value])
+    static func != (column: Column, value: BaseValueConvertible) -> Condition {
+        Condition(sql: "\(column.name) != \(kParam)", params: [value])
     }
 }
 
 extension Column {
 
-    static func > (lhs: Column, rhs: Column) -> ConditionExpression {
-        ConditionExpression(sql: "\(lhs.name) > \(rhs.name)")
+    static func > (lhs: Column, rhs: Column) -> Condition {
+        Condition(sql: "\(lhs.name) > \(rhs.name)")
     }
 
-    static func >= (lhs: Column, rhs: Column) -> ConditionExpression {
-        ConditionExpression(sql: "\(lhs.name) >= \(rhs.name)")
+    static func >= (lhs: Column, rhs: Column) -> Condition {
+        Condition(sql: "\(lhs.name) >= \(rhs.name)")
     }
 
-    static func < (lhs: Column, rhs: Column) -> ConditionExpression {
-        ConditionExpression(sql: "\(lhs.name) < \(rhs.name)")
+    static func < (lhs: Column, rhs: Column) -> Condition {
+        Condition(sql: "\(lhs.name) < \(rhs.name)")
     }
 
-    static func <= (lhs: Column, rhs: Column) -> ConditionExpression {
-        ConditionExpression(sql: "\(lhs.name) <= \(rhs.name)")
+    static func <= (lhs: Column, rhs: Column) -> Condition {
+        Condition(sql: "\(lhs.name) <= \(rhs.name)")
     }
 
-    static func == (lhs: Column, rhs: Column) -> ConditionExpression {
-        ConditionExpression(sql: "\(lhs.name) == \(rhs.name)")
+    static func == (lhs: Column, rhs: Column) -> Condition {
+        Condition(sql: "\(lhs.name) == \(rhs.name)")
     }
 
-    static func != (lhs: Column, rhs: Column) -> ConditionExpression {
-        ConditionExpression(sql: "\(lhs.name) != \(rhs.name)")
+    static func != (lhs: Column, rhs: Column) -> Condition {
+        Condition(sql: "\(lhs.name) != \(rhs.name)")
     }
 }
 
 // MARK: Basic Column Operators
 
 extension Column {
-    func `in`(_ values: [BaseValueConvertible]) -> ConditionExpression {
+    func `in`(_ values: [BaseValueConvertible]) -> Condition {
         let paramPlaceholders = Array<String>(repeating: kParam, count: values.count).joined(separator: ",")
         let sql = "\(name) in (\(paramPlaceholders))"
-        return ConditionExpression(sql: sql, params: values)
+        return Condition(sql: sql, params: values)
     }
 
-    func notIn(_ values: [BaseValueConvertible]) -> ConditionExpression {
+    func notIn(_ values: [BaseValueConvertible]) -> Condition {
         let paramPlaceholders = Array<String>(repeating: kParam, count: values.count).joined(separator: ",")
         let sql = "\(name) not in (\(paramPlaceholders))"
-        return ConditionExpression(sql: sql, params: values)
+        return Condition(sql: sql, params: values)
     }
 
-    func between(_ value1: BaseValueConvertible, and value2: BaseValueConvertible) -> ConditionExpression {
-        ConditionExpression(sql: "\(name) between \(kParam) and \(kParam)", params: [value1, value2])
+    func between(_ value1: BaseValueConvertible, and value2: BaseValueConvertible) -> Condition {
+        Condition(sql: "\(name) between \(kParam) and \(kParam)", params: [value1, value2])
     }
 
-    func notBetween(_ value1: BaseValueConvertible, and value2: BaseValueConvertible) -> ConditionExpression {
-        ConditionExpression(sql: "\(name) not between \(kParam) and \(kParam)", params: [value1, value2])
+    func notBetween(_ value1: BaseValueConvertible, and value2: BaseValueConvertible) -> Condition {
+        Condition(sql: "\(name) not between \(kParam) and \(kParam)", params: [value1, value2])
     }
 
-    func isNull() -> ConditionExpression {
-        ConditionExpression(sql: "\(name) isnull")
+    func isNull() -> Condition {
+        Condition(sql: "\(name) isnull")
     }
 
-    func notNull() -> ConditionExpression {
-        ConditionExpression(sql: "\(name) notnull")
+    func notNull() -> Condition {
+        Condition(sql: "\(name) notnull")
     }
 }
 

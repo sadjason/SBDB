@@ -51,7 +51,7 @@ public enum Table {
         }
 
         @discardableResult
-        public func addColumn(_ name: String, type: ColumnDefinition.DataType?) -> ColumnDefinition {
+        public func column(_ name: String, type: ColumnDefinition.DataType?) -> ColumnDefinition {
             let column = ColumnDefinition(name, type)
             columns.append(column)
             return column
@@ -67,7 +67,7 @@ public enum Table {
     }
 }
 
-extension Table.Definition : Executable {
+extension Table.Definition {
 
     var sql: String {
         var str = "create table"
@@ -88,16 +88,31 @@ extension Table.Definition : Executable {
     }
 
     var params: [BaseValueConvertible]? { nil }
+}
 
-    func exec(in database: Database) throws {
-        try database.exec(sql: sql)
+struct TableDropStatement: ParameterExpression {
+
+    let tableName: String
+    init(name: String) {
+        tableName = name
     }
+
+    var sql: String { "drop table \(tableName)" }
+
+    var params: [BaseValueConvertible]? = nil
 }
 
 public extension TableEncodable {
     static func create(in database: Database, closure: (Table.Definition) -> Void) throws {
         let definition = Table.Definition(name: tableName)
         closure(definition)
-        try definition.exec(in: database)
+        try database.exec(sql: definition.sql, withParams: definition.params)
+    }
+}
+
+public extension CustomTableNameConvertible {
+    static func drop(from database: Database) throws {
+        let drop = TableDropStatement(name: self.tableName)
+        try database.exec(sql: drop.sql, withParams: drop.params)
     }
 }

@@ -12,17 +12,17 @@ import Foundation
 
 // MARK: - TableCodable Protocols
 
-public protocol TableNameConvertible {
+public protocol CustomTableNameConvertible {
     static var tableName: String { get }
 }
 
-extension TableNameConvertible {
+extension CustomTableNameConvertible {
     static var tableName: String { String(describing: Self.self) }
 }
 
-public protocol TableEncodable: Encodable, TableNameConvertible { }
+public protocol TableEncodable: Encodable, CustomTableNameConvertible { }
 
-public protocol TableDecodable: Decodable, TableNameConvertible { }
+public protocol TableDecodable: Decodable, CustomTableNameConvertible { }
 
 public typealias TableCodable = TableEncodable & TableDecodable
 
@@ -35,6 +35,8 @@ final public class TableEncoder {
         try value.encode(to: encoder)
         return encoder.storage
     }
+
+    static var `default` = TableEncoder()
 }
 
 private class _TableEncoder: Encoder {
@@ -165,7 +167,7 @@ extension _TableEncoder.KeyedContainer {
 extension _TableEncoder.KeyedContainer {
 
     private func _encodeIfPresent(_ value: BaseValueConvertible?, forKey key: Key) {
-        encoder.storage[_convert(key).stringValue] = value?.baseValue ?? BaseValue.init(storage: .null)
+        encoder.storage[_convert(key).stringValue] = value?.baseValue ?? Base.null
     }
 
     mutating func encodeIfPresent(_ value: Bool?, forKey key: Key) throws {
@@ -240,6 +242,8 @@ public final class TableDecoder {
         let decoder = _TableDecoder(storage: storage)
         return try T.init(from: decoder)
     }
+
+    static var `default` = TableDecoder()
 }
 
 private class _TableDecoder: Decoder {
@@ -276,7 +280,13 @@ private class _TableDecoder: Decoder {
         init(decoder: _TableDecoder, codingPath: [CodingKey]) {
             self.decoder = decoder
             self.codingPath = codingPath
-            allKeys = decoder.storage.keys.map { Key.init(stringValue: $0)! }
+            var keys = [Key]()
+            for colName in decoder.storage.keys {
+                if let k = Key.init(stringValue: colName) {
+                    keys.append(k)
+                }
+            }
+            allKeys = keys
         }
 
         fileprivate func _converted(_ key: Key) -> Key { key }

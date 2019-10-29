@@ -66,54 +66,54 @@ extension SingleParameterExpression {
     }
 }
 
-// MARK: - ConditionExpression
+// MARK: - Condition
 
-struct ConditionExpression: ParameterExpression {
+struct Condition: ParameterExpression {
     var sql: String
     var params: [BaseValueConvertible]?
 }
 
-// MARK: ConditionExpression Operators
+// MARK: Condition Operators
 
-extension ConditionExpression {
+private let NotConditionPrefix = "not "
+
+extension Condition {
+
+    private var hasNot: Bool {
+        let s = sql.trimmingCharacters(in: .whitespaces)
+        return s.lowercased().hasPrefix(NotConditionPrefix)
+    }
 
     // `and` operator for Condition
-    static func && (lhs: ConditionExpression, rhs: ConditionExpression) -> ConditionExpression {
+    static func && (lhs: Condition, rhs: Condition) -> Condition {
         let sql = "\(lhs.sql) and \(rhs.sql)"
         var params: [BaseValueConvertible]? = nil
         if lhs.params != nil || rhs.params != nil {
             params = (lhs.params ?? []) + (rhs.params ?? [])
         }
-        return ConditionExpression(sql: sql, params: params)
+        return Condition(sql: sql, params: params)
     }
 
     // `or` operator for Condition
-    static func || (lhs: ConditionExpression, rhs: ConditionExpression) -> ConditionExpression {
+    static func || (lhs: Condition, rhs: Condition) -> Condition {
         let sql = "\(lhs.sql) or \(rhs.sql)"
         var params: [BaseValueConvertible]? = nil
         if lhs.params != nil || rhs.params != nil {
             params = (lhs.params ?? []) + (rhs.params ?? [])
         }
-        return ConditionExpression(sql: sql, params: params)
-    }
-}
-
-// MARK: - WhereExpression
-
-struct WhereExpression: ParameterExpression {
-    let notFlag: Bool
-    let cond: ConditionExpression
-
-    init(condition: ConditionExpression, notFlag yesOrNo: Bool = false) {
-        cond = condition
-        notFlag = yesOrNo
+        return Condition(sql: sql, params: params)
     }
 
-    var sql: String {
-        "where \(notFlag ? "not" : "") \(cond.sql)"
-    }
-    var params: [BaseValueConvertible]? {
-        cond.params
+    // `not` operator for Condition
+    static prefix func !(_ cond: Condition) -> Condition {
+        if cond.hasNot {
+            let sql = cond.sql.trimmingCharacters(in: .whitespaces)
+            let index = sql.index(sql.startIndex, offsetBy: 5)
+            let newSql = sql.suffix(from: index).trimmingCharacters(in: .whitespaces)
+            return Condition(sql: newSql, params: cond.params)
+        } else {
+            return Condition(sql: NotConditionPrefix + cond.sql, params: cond.params)
+        }
     }
 }
 

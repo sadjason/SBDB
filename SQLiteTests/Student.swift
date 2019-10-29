@@ -20,7 +20,6 @@ struct Student: TableCodable, Equatable {
     let extra: Data?
 }
 
-
 private func randomFirstName() -> String {
     let strs =
     ["赵", "钱", "孙", "李", "周", "吴", "郑", "王",

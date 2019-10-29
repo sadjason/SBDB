@@ -2,7 +2,7 @@
 //  RawStatement.swift
 //  SQLite
 //
-//  Created by zhangwei on 2019/10/19.
+//  Created by zhangwei on 2019/10/21.
 //  Copyright © 2019 ByteDance. All rights reserved.
 //
 
@@ -10,40 +10,54 @@ import Foundation
 import SQLite3
 
 /// https://www.sqlite.org/c3ref/stmt.html
-struct RawStatement {
-
-    typealias ColumnIndex = Int32
+final class RawStatement {
 
     private let sql: String
-    fileprivate let db: OpaquePointer
+    fileprivate let dbPointer: OpaquePointer
     fileprivate let stmtPointer: OpaquePointer
+    fileprivate var status: Status
+
+    fileprivate enum Status {
+        case prepared
+        case steped
+        case reseted
+        case finalized
+    }
 
     static let stepSucceedCodes: Set<Int32> = [SQLITE_OK, SQLITE_DONE, SQLITE_ROW]
 
-    init?(sql: String, db: OpaquePointer) throws {
-        self.sql = sql
-        self.db = db
+    init(sql: String, database: OpaquePointer) throws {
 
         /// prepare:
         /// https://www.sqlite.org/c3ref/prepare.html
-        var stmt: OpaquePointer? = nil
-        let ret = sqlite3_prepare_v2(db, sql, Int32(sql.utf8.count), &stmt, nil)
+        var pStmt: OpaquePointer? = nil
+        let ret = sqlite3_prepare_v2(database, sql, Int32(sql.utf8.count), &pStmt, nil)
         guard ret == SQLITE_OK else {
-            throw SQLiteError.prepareFailed(Base.lastErrorMessage(of: db), ret)
+            throw SQLiteError.StatementError.prepareFailed(lastErrorMessage(of: database), ret)
         }
-        if stmt == nil {
-            return nil
+        guard let stmt = pStmt else {
+            throw SQLiteError.StatementError.prepareFailed("sql is empty", ret)
         }
 
-        stmtPointer = stmt!
+        self.sql = sql
+        self.dbPointer = database
+        self.status = .prepared
+        self.stmtPointer = stmt
+    }
+
+    deinit {
+        /// https://www.sqlite.org/c3ref/finalize.html
+        // Invoking sqlite3_finalize() on a NULL pointer is a harmless no-op.
+        sqlite3_finalize(stmtPointer)
     }
 
     /// https://www.sqlite.org/c3ref/step.html
     @discardableResult
-    func step() throws -> SQLiteResultCode {
+    func step() throws -> SQLiteExecuteCode {
         let ret = sqlite3_step(stmtPointer)
+        status = .steped
         guard RawStatement.stepSucceedCodes.contains(ret) else {
-            throw SQLiteError.stepFailed(Base.lastErrorMessage(of: db), ret)
+            throw SQLiteError.StatementError.stepFailed(lastErrorMessage(of: dbPointer), ret)
         }
         return ret
     }
@@ -51,15 +65,10 @@ struct RawStatement {
     /// https://www.sqlite.org/c3ref/reset.html
     func reset() throws {
         let ret = sqlite3_reset(stmtPointer)
+        status = .reseted
         guard ret == SQLITE_OK else {
-            throw SQLiteError.resetFalied(Base.lastErrorMessage(of: db), ret)
+            throw SQLiteError.StatementError.resetFailed(lastErrorMessage(of: dbPointer), ret)
         }
-    }
-
-    /// https://www.sqlite.org/c3ref/finalize.html
-    mutating func finalize() {
-        // Invoking sqlite3_finalize() on a NULL pointer is a harmless no-op.
-        sqlite3_finalize(stmtPointer)
     }
 }
 
@@ -70,7 +79,7 @@ let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 extension RawStatement {
 
     /// https://www.sqlite.org/c3ref/bind_blob.html
-    func bind(_ value: BaseValue, to index: ColumnIndex) throws {
+    func bind(_ value: BaseValue, to index: Base.ColumnIndex) throws {
         let ret: Int32
         switch value.storage {
         case .integer(let num):
@@ -87,7 +96,61 @@ extension RawStatement {
             }
         }
         guard ret == SQLITE_OK else {
-            throw SQLiteError.bindFalied(Base.lastErrorMessage(of: db), ret)
+            throw SQLiteError.StatementError.bindFailed(lastErrorMessage(of: dbPointer), ret)
         }
     }
 }
+
+// MARK: Result Values
+
+/// https://www.sqlite.org/c3ref/column_blob.html
+extension RawStatement {
+
+    private func _columnValue(at index: Base.ColumnIndex)
+        throws -> BaseValueConvertible
+    {
+
+        switch sqlite3_column_type(stmtPointer, index) {
+        case SQLITE_INTEGER: return Int64(sqlite3_column_int64(stmtPointer, index))
+        case SQLITE_FLOAT: return Double(sqlite3_column_double(stmtPointer, index))
+        case SQLITE_BLOB:
+            if let bytes = sqlite3_column_blob(stmtPointer, index) {
+                let count = Int(sqlite3_column_bytes(stmtPointer, index))
+                return Data(bytes: bytes, count: count)
+            } else {
+                return Data()
+            }
+        case SQLITE_TEXT: return String(cString:sqlite3_column_text(stmtPointer, index))
+        case SQLITE_NULL: return Base.null
+        default: throw SQLiteError.ReadError.typeMismatch
+        }
+    }
+
+    /// https://www.sqlite.org/c3ref/column_count.html
+    func columnCount() -> Int {
+        Int(sqlite3_column_count(stmtPointer))
+    }
+
+    /// https://www.sqlite.org/c3ref/column_blob.html
+    func readColumn(at index: Base.ColumnIndex) -> BaseValueConvertible? {
+        guard index < columnCount() else {
+            return nil
+        }
+        return try? _columnValue(at: index)
+    }
+
+    func readRow() -> Base.RowStorage? {
+        let colCount = columnCount()
+        guard colCount > 0 else {
+            return nil
+        }
+        var storage = Base.RowStorage()
+        (0..<colCount).forEach { (index) in
+            let colName = String(cString: sqlite3_column_name(stmtPointer, Int32(index)))
+            let colValue = (try? _columnValue(at: Int32(index))) ?? Base.null
+            storage[colName] = colValue
+        }
+        return storage
+    }
+}
+

@@ -10,7 +10,7 @@ import Foundation
 
 /// https://www.sqlite.org/lang_update.html
 
-public class UpdateStatement<T: TableEncodable>: WriteExecutable {
+public class UpdateStatement<T: TableEncodable>: ParameterExpression {
 
     enum IndexedStrategy: Expression {
         case none
@@ -28,7 +28,7 @@ public class UpdateStatement<T: TableEncodable>: WriteExecutable {
 
     private let onConflict: Base.Conflict?
     private var indexedStrategy: IndexedStrategy = .none
-    private var whereExpr: WhereExpression?
+    private var whereCondition: Condition?
     private var assignments = [String: ColumnAssignment]()
 
     var sql: String {
@@ -41,8 +41,8 @@ public class UpdateStatement<T: TableEncodable>: WriteExecutable {
         let assigns = assignments.keys.sorted().map { "\($0) = ?" }.joined(separator: ",")
         chunk += " set \(assigns)"
 
-        if let whereExpr = whereExpr {
-            chunk += " \(whereExpr.sql)"
+        if let cond = whereCondition {
+            chunk += " where \(cond.sql)"
         }
 
         return chunk
@@ -50,7 +50,7 @@ public class UpdateStatement<T: TableEncodable>: WriteExecutable {
 
     var params: [BaseValueConvertible]? {
         let columnValues = assignments.keys.sorted().map { assignments[$0]!.baseValue }
-        return columnValues + (whereExpr?.params ?? [])
+        return columnValues + (whereCondition?.params ?? [])
     }
 
     init(onConflict: Base.Conflict? = nil) {
@@ -64,17 +64,10 @@ public class UpdateStatement<T: TableEncodable>: WriteExecutable {
     }
 
     @discardableResult
-    func `where`(_ cond: ConditionExpression) -> Self {
-        precondition(whereExpr == nil, "You can only invoke `where` or `whereNot` once")
+    func `where`(_ cond: Condition) -> Self {
+        precondition(whereCondition == nil, "You can only invoke `where` once")
 
-        whereExpr = WhereExpression(condition: cond)
-        return self
-    }
-
-    @discardableResult
-    func whereNot(_ cond: ConditionExpression) -> Self {
-        precondition(whereExpr == nil, "You can only invoke `where` or `whereNot` once")
-        whereExpr = WhereExpression(condition: cond, notFlag: true)
+        whereCondition = cond
         return self
     }
 
@@ -86,17 +79,15 @@ public class UpdateStatement<T: TableEncodable>: WriteExecutable {
 
         print("exec update sql: \(sql)")
 
-        var stmt = try RawStatement(sql: sql, db: database.db)
+        let stmt = try RawStatement(sql: sql, database: database.db)
 
-        var index: RawStatement.ColumnIndex = 1
+        var index: Base.ColumnIndex = 1
         for param in params ?? [] {
-            try stmt?.bind(param.baseValue, to: index)
+            try stmt.bind(param.baseValue, to: index)
             index += 1
         }
 
-        try stmt?.step()
-
-        stmt?.finalize()
+        try stmt.step()
     }
 }
 

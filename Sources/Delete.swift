@@ -8,63 +8,41 @@
 
 import Foundation
 
-class DeleteStatement<T: TableEncodable> {
+class DeleteStatement {
 
-    private var whereExpr: WhereExpression?
+    var whereCondition: Condition?
+
+    let tableName: String
+
+    init(tableName: String) {
+        self.tableName = tableName
+    }
 
     var sql: String {
-        var chunk = "delete from \(T.tableName)"
+        var chunk = "delete from \(tableName)"
 
-        if let whereExpr = whereExpr {
-            chunk += " \(whereExpr.sql)"
+        if let cond = whereCondition {
+            chunk += " where \(cond.sql)"
         }
 
         return chunk
     }
 
     var params: [BaseValueConvertible]? {
-        return whereExpr?.params
-    }
-
-    @discardableResult
-    func `where`(_ cond: ConditionExpression) -> Self {
-        precondition(whereExpr == nil, "You can only invoke `where`/`whereNot` once")
-
-        whereExpr = WhereExpression(condition: cond)
-        return self
-    }
-
-    @discardableResult
-    func whereNot(_ cond: ConditionExpression) -> Self {
-        precondition(whereExpr == nil, "You can only invoke `where`/`whereNot` once")
-        whereExpr = WhereExpression(condition: cond, notFlag: true)
-        return self
-    }
-}
-
-extension DeleteStatement: Executable {
-
-    func exec(in database: Database) throws {
-
-        print("exec delete sql: \(sql)")
-
-        var stmt = try RawStatement(sql: sql, db: database.db)
-
-        var index: RawStatement.ColumnIndex = 1
-        for param in params ?? [] {
-            try stmt?.bind(param.baseValue, to: index)
-            index += 1
-        }
-
-        try stmt?.step()
-
-        stmt?.finalize()
+        return whereCondition?.params
     }
 }
 
 extension TableEncodable {
 
-    static func delete() -> DeleteStatement<Self> {
-        DeleteStatement<Self>()
+    static func delete(
+        in database: Database,
+        where condition: Condition? = nil) throws
+    {
+        let deleteStmt = DeleteStatement(tableName: Self.tableName)
+        if let cond = condition {
+            deleteStmt.whereCondition = cond
+        }
+        try database.exec(sql: deleteStmt.sql, withParams: deleteStmt.params)
     }
 }

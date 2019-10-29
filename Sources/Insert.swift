@@ -7,82 +7,98 @@
 //
 
 import Foundation
+import SQLite3
 
 /// https://www.sqlite.org/lang_insert.html
-class InsertStatement<T: TableEncodable> {
 
-    enum `Type`: String, Expression {
-        case insert = "insert"
-        case replace = "replace"
-        case insertOrReplace = "insert or replace"
-        case insertOrRollback = "insert or rollback"
-        case insertOrAbort = "insert or abort"
-        case insertOrFail = "insert or fail"
-        case insertOrIgnore = "insert or ignore"
+public struct InsertStatement {
+    public enum Mode {
+        case insert
+        case replace
+        case insertOr(Base.Conflict)
     }
 
-    let target: T
-    let type: `Type`
-    fileprivate var _encoded: Base.RowStorage?
+    let tableName: String
+    let mode: Mode
 
-    init(_ target: T, withType type: Type = .insert) {
-        self.target = target
-        self.type = type
+    var rows: [Base.RowStorage]
+
+    init(
+        tableName: String,
+        rows: [Base.RowStorage] = [],
+        mode: Mode = .insert
+    ) {
+        self.tableName = tableName
+        self.rows = rows
+        self.mode = mode
+    }
+
+    mutating func append(_ rows: [Base.RowStorage]) {
+        self.rows.append(contentsOf: rows)
     }
 }
 
-extension InsertStatement: WriteExecutable {
+public typealias InsertMode = InsertStatement.Mode
 
+extension InsertStatement.Mode : Expression {
     var sql: String {
-        var chunk = "\(type.sql) into \(T.tableName) "
-
-        if _encoded == nil {
-            _encoded = try? TableEncoder().encode(target)
+        switch self {
+        case .insert: return "insert"
+        case .replace: return "replace"
+        case .insertOr(let onConflict): return "insert or \(onConflict.sql)"
         }
-
-        let keys: Array<String> = _encoded?.keys.sorted() ?? []
-        chunk += "(\(keys.joined(separator: ",")))"
-        chunk += " values (\(Array(repeating: ParameterPlaceholder, count: keys.count).joined(separator: ",")))"
-
-        return chunk
     }
+}
 
-    var params: [BaseValueConvertible]? {
-        if _encoded == nil {
-            _encoded = try? TableEncoder().encode(target)
-        }
-        guard let encoded = _encoded else {
-            assert(false, "record failed")
-            return nil
-        }
-        return encoded.keys.sorted().map { encoded[$0]! }
+extension InsertStatement {
+
+    private func sqlAndParams(at index: Int) -> (String, [BaseValueConvertible]?) {
+        let row = rows[index]
+        let keys = row.keys.sorted()
+
+        var sql = "\(mode.sql) into \(tableName) "
+        sql += "(\(keys.joined(separator: ",")))"
+        sql += " values (\(Array(repeating: ParameterPlaceholder, count: keys.count).joined(separator: ",")))"
+
+        let params = keys.map { row[$0]! }
+        return (sql, params)
     }
 
     func exec(in database: Database) throws {
 
-        print("exec insert: \(sql)")
-
-        var stmt = try RawStatement(sql: sql, db: database.db)
-
-        var index: RawStatement.ColumnIndex = 1
-        for param in params ?? [] {
-            try stmt?.bind(param.baseValue, to: index)
-            index += 1
+        try rows.enumerated().forEach { (index, _) in
+            let (sql, params) = sqlAndParams(at: index)
+            try database.exec(sql: sql, withParams: params)
         }
-
-        try stmt?.step()
-
-        stmt?.finalize()
     }
 }
 
 extension TableEncodable {
 
-    func insert() throws -> InsertStatement<Self> {
-        InsertStatement(self)
+    static func save(
+        _ objects: [Self],
+        in database: Database,
+        withMode mode: InsertMode = .insert) throws
+    {
+        guard objects.count > 0 else {
+            return
+        }
+
+        if objects.count == 1 {
+            try objects.first!.save(in: database, withMode: mode)
+            return
+        }
+
+        let encoder = TableEncoder.default
+        let rows = try objects.map { try encoder.encode($0) }
+        let stmt = InsertStatement(tableName: self.tableName, rows: rows, mode: mode)
+        try stmt.exec(in: database)
     }
 
-    func insertOrReplace() throws -> InsertStatement<Self> {
-        InsertStatement(self, withType: .insertOrReplace)
+    func save(in database: Database, withMode mode: InsertMode = .insert) throws {
+        let encoder = TableEncoder.default
+        let row = try encoder.encode(self)
+        let stmt = InsertStatement(tableName: Self.tableName, rows: [row], mode: mode)
+        try stmt.exec(in: database)
     }
 }

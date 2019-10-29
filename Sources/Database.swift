@@ -12,6 +12,10 @@ import SQLite3
 public class Database {
 
     var db: OpaquePointer! = nil
+
+    lazy var statementLock = UnfairLock()
+    var inTransaction: Bool = false
+    lazy var transactionLock = UnfairLock()
     private var cachedStatements = [String: RawStatement]()
 
     /// TODO: 暂时不支持 tempory 数据库的建立，也不支持 flags
@@ -22,12 +26,9 @@ public class Database {
         if ret == SQLITE_OK {
             print("database is opened successfully, path: \(path)")
         } else {
-            defer {
-                // calling `sqlite3_close` with a NULL pointer argument is a harmless no-op.
-                sqlite3_close(db)
-            }
-
-            throw SQLiteError.openFailed("Open database in \(path) failed: \(lastErrorMessage)", ret)
+            // calling `sqlite3_close` with a NULL pointer argument is a harmless no-op.
+            sqlite3_close(db)
+            throw SQLiteError.ConnectionError.openFailed("Open database at \(path) failed: \(lastErrorMessage(of: db))", ret)
         }
     }
 
@@ -35,38 +36,84 @@ public class Database {
         sqlite3_close(db)
     }
 
-    private var lastErrorMessage: String {
-        // `sqlite3_errmsg(nil)` return "out of memory", so do not worry about `db`
-        String(cString: sqlite3_errmsg(db))
-    }
-
-    func exec(sql: String) throws {
-        var stmt = cachedStatements[sql]
-        if stmt == nil {
-            stmt = try RawStatement(sql: sql, db: db!)
-            if stmt != nil {
-                cachedStatements[sql] = stmt
-            } else {
-                return
-            }
+    @discardableResult
+    func exec(
+        sql: String,
+        withParams params: [BaseValueConvertible]?)
+        throws -> SQLiteExecuteCode
+    {
+        let stmt: RawStatement
+        if let s = popStatement(forKey: sql) {
+            try s.reset()
+            stmt = s
+        } else {
+            stmt = try RawStatement(sql: sql, database: db)
         }
 
-        try stmt!.step()
+        defer {
+            pushStatement(stmt, forKey: sql)
+        }
 
-        print("exec sql succeed: \(sql)")
+        try params?.enumerated().forEach { (index, param) in
+            try stmt.bind(param.baseValue, to: Base.ColumnIndex(index + 1))
+        }
+
+        return try stmt.step()
     }
 }
 
+// MARK: Manage Statements
+
 extension Database {
-    func beginTransactiton(with mode: Base.TransactionMode = .exclusive) throws {
-        try exec(sql: "BEGIN TRANSACTION \(mode.sql)")
+    func pushStatement( _ statement: RawStatement, forKey key: String) {
+        statementLock.protect {
+            guard cachedStatements[key] == nil else {
+                return
+            }
+            cachedStatements[key] = statement
+        }
     }
 
-    func commitTransaction() throws {
-        try exec(sql: "COMMIT TRANSACTION")
+    func popStatement(forKey key: String) -> RawStatement? {
+        statementLock.protect { () -> RawStatement? in
+            if let ret = cachedStatements[key] {
+                cachedStatements.removeValue(forKey: key)
+                return ret
+            }
+            return nil
+        }
+    }
+}
+
+// MARK: Transaction
+
+extension Database {
+
+    public struct Transaction {
+
+        let database: Database
+        let mode: Base.TransactionMode
+
+        init(database: Database, mode: Base.TransactionMode) throws {
+            try database.exec(sql: "begin transaction \(mode.sql)", withParams: nil)
+
+            self.database = database
+            self.mode = mode
+        }
+
+        func commit() {
+            let _ = try? database.exec(sql: "commit transaction", withParams: nil)
+        }
+
+        func rollback() {
+            let _ = try? database.exec(sql: "rollback transaction", withParams: nil)
+        }
     }
 
-    func rollbackTransaction() throws {
-        try exec(sql: "ROLLBACK TRANSACTION")
+    // TODO: 如何正确开启 transaction
+    func transaction() -> Void {
+        // TODO: 如何避免嵌套
+        // 避免 transaction begin 了两次
+        // 避免 transaction commit 了两次
     }
 }
