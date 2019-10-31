@@ -10,15 +10,18 @@ import Foundation
 
 final public class DatabaseQueue {
     // 非 serialized mode 下，对 Database 的访问使用 queue 保护
-    let queue: DispatchQueue
-    let queueKey: DispatchSpecificKey<String>
+    fileprivate let path: String
+    fileprivate let options: OpenOptions?
+
+    private let queue: DispatchQueue
+    private let queueKey: DispatchSpecificKey<String>
+
     private var database: Database?
-    let path: String
-    let options: OpenOptions?
 
     init(path: String, options: OpenOptions? = nil) {
         self.path = path
         self.options = options
+
         let label = "database.queue.\(UUID.init().uuidString)"
         queueKey = DispatchSpecificKey<String>()
         queue = DispatchQueue(label: label)
@@ -39,8 +42,9 @@ final public class DatabaseQueue {
         }
     }
 
+    /// 访问数据库
+    /// - Parameter workItem: The work item to be invoked on the queue
     func inDatabasae(execute workItem: DatabaseWorkItem) throws {
-
         try checkQueue()
 
         try queue.sync {
@@ -49,15 +53,26 @@ final public class DatabaseQueue {
         }
     }
 
-    func inTransaction(mode: TransactionMode = .defered, execute workItem: TransactionWorkItem) throws {
+    /// 基于事务访问数据库
+    ///
+    /// - Parameter mode: transaction mode
+    /// - Parameter workItem: The work item to be invoked on the queue
+    /// - See also /// https://www.sqlite.org/lang_transaction.html
+    func inTransaction(
+        mode: TransactionMode = .defered,
+        execute workItem: TransactionWorkItem
+    ) throws
+    {
         try checkQueue()
 
         try queue.sync {
             let database = try checkDatabase()
 
             var shouldRollback = false
+            let rollback: Rollback = { () in shouldRollback = true }
+
             try database.beginTransaction(withMode: mode)
-            workItem(database, &shouldRollback)
+            workItem(database, rollback)
             if shouldRollback {
                 try database.rollbackTransaction()
             } else {

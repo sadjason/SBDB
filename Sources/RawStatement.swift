@@ -2,7 +2,7 @@
 //  RawStatement.swift
 //  SQLite
 //
-//  Created by zhangwei on 2019/10/21.
+//  Created by zhangwei on 2019/10/23.
 //  Copyright © 2019 ByteDance. All rights reserved.
 //
 
@@ -53,7 +53,7 @@ final class RawStatement {
 
     /// https://www.sqlite.org/c3ref/step.html
     @discardableResult
-    func step() throws -> SQLiteExecuteCode {
+    func step() throws -> SQLiteCode {
         let ret = sqlite3_step(stmtPointer)
         status = .steped
         guard RawStatement.stepSucceedCodes.contains(ret) else {
@@ -106,6 +106,7 @@ extension RawStatement {
 /// https://www.sqlite.org/c3ref/column_blob.html
 extension RawStatement {
 
+    /// https://www.sqlite.org/c3ref/column_blob.html
     private func _columnValue(at index: Base.ColumnIndex) throws -> BaseValueConvertible {
         let type = sqlite3_column_type(stmtPointer, index)
         switch type {
@@ -127,20 +128,6 @@ extension RawStatement {
     /// https://www.sqlite.org/c3ref/column_count.html
     func columnCount() -> Int {
         Int(sqlite3_column_count(stmtPointer))
-    }
-
-    /// https://www.sqlite.org/c3ref/column_blob.html
-    func readColumn(at index: Base.ColumnIndex) -> BaseValueConvertible? {
-        guard index < columnCount() else {
-            return Base.null
-        }
-        do {
-            return try _columnValue(at: index)
-        } catch {
-            // TODO: log error
-            print("readColumn failed: \(error)")
-        }
-        return nil
     }
 
     func readRow() -> Base.RowStorage {

@@ -79,15 +79,7 @@ public class UpdateStatement<T: TableEncodable>: ParameterExpression {
 
         print("exec update sql: \(sql)")
 
-        let stmt = try RawStatement(sql: sql, database: database.pointer)
-
-        var index: Base.ColumnIndex = 1
-        for param in params ?? [] {
-            try stmt.bind(param.baseValue, to: index)
-            index += 1
-        }
-
-        try stmt.step()
+        try database.exec(sql: sql, withParams: params)
     }
 }
 
@@ -105,7 +97,11 @@ extension TableEncodable {
         return stmt
     }
     
-    public static func update(or conflictStrategy: Base.Conflict, closure: (inout ColumnValueMap) -> Void) -> UpdateStatement<Self> {
+    public static func update(
+        or conflictStrategy: Base.Conflict,
+        closure: (inout ColumnValueMap) -> Void
+    ) -> UpdateStatement<Self>
+    {
         let stmt = UpdateStatement<Self>(onConflict: conflictStrategy)
         var map = ColumnValueMap()
         closure(&map)

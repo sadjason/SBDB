@@ -10,29 +10,33 @@ import Foundation
 
 final class DatabasePool {
 
-    fileprivate lazy var databasePool = Set<Database>()
-    fileprivate lazy var poolLock = UnfairLock()
-    lazy fileprivate var writeQueue: DatabaseQueue = _initWriteQueue()
+    private lazy var readDatabasPoolLock = UnfairLock()
+    private lazy var readDatabasPool = Set<Database>()
+    private lazy var writeQueue: DatabaseQueue = _initWriteQueue()
+
+    private let readOptions: OpenOptions = [.readonly, .noMutex]
+    private let writeOptions: OpenOptions = [.readwrite, .create, .noMutex]
 
     let path: String
-    let options: OpenOptions?
 
-    init(path: String, options: OpenOptions? = nil) {
+    init(path: String) {
         self.path = path
-        self.options = options
-    }
-
-    func _initWriteQueue() -> DatabaseQueue {
-        let queue = DatabaseQueue(path: path, options: options)
-        try? queue.inDatabasae { (db) in
-            try? setupDatabase(db)
-        }
-        return queue
     }
 }
 
+// MARK: Writing Queue
+
 extension DatabasePool {
-    fileprivate func setupDatabase(_ db: Database) throws {
+
+    private func _initWriteQueue() -> DatabaseQueue {
+        let queue = DatabaseQueue(path: path, options: writeOptions)
+        try? queue.inDatabasae { (db) in
+            try? _setupWalMode(db)
+        }
+        return queue
+    }
+
+    private func _setupWalMode(_ db: Database) throws {
 
         // 1. set wal mode
         // https://www.sqlite.org/wal.html
@@ -54,29 +58,32 @@ extension DatabasePool {
     }
 }
 
-// MARK: Manage Database
+// MARK: Reading Pool
 
 extension DatabasePool {
 
     func popReadDatabase() throws -> Database {
-        poolLock.lock(); defer { poolLock.unlock() }
+        readDatabasPoolLock.lock(); defer { readDatabasPoolLock.unlock() }
 
-        if let db = databasePool.popFirst() {
+        if let db = readDatabasPool.popFirst() {
             return db
         }
-        let db = try Database(path: path, options: options)
-        try setupDatabase(db)
-        return db
+        return try Database(path: path, options: readOptions)
     }
 
     func pushReadDatabase(_ db: Database) {
-        poolLock.lock(); defer { poolLock.unlock() }
+        readDatabasPoolLock.lock(); defer { readDatabasPoolLock.unlock() }
 
-        databasePool.insert(db)
+        readDatabasPool.insert(db)
     }
 }
 
 extension DatabasePool {
+
+    /// 通过该方法访问 database 能获取到更高的读效率，需要注意的是，
+    /// 此时获取的 database connection 是只读的，如果尝试进行写操作，会报错
+    ///
+    /// - Parameter workItem: 访问 database
     func read(_ workItem: DatabaseWorkItem) throws {
         let db = try popReadDatabase()
         defer {
@@ -87,7 +94,20 @@ extension DatabasePool {
         workItem(db)
     }
 
+    /// 以非事务的方式访问数据库
+    ///
+    /// - Parameter workItem: 访问 database
     func write(_ workItem: DatabaseWorkItem) throws {
+        try writeQueue.inDatabasae(execute: workItem)
+    }
+
+    /// 以事务的方式访问数据库
+    /// - Parameter mode: 事务模式
+    /// - Parameter workItem: 访问 database
+    func write(
+        transaction mode: TransactionMode = .defered,
+        execute workItem: DatabaseWorkItem
+    ) throws {
         try writeQueue.inDatabasae(execute: workItem)
     }
 }

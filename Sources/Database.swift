@@ -2,7 +2,7 @@
 //  Database.swift
 //  SQLite
 //
-//  Created by zhangwei on 2019/10/20.
+//  Created by zhangwei on 2019/10/22.
 //  Copyright © 2019 ByteDance. All rights reserved.
 //
 
@@ -10,15 +10,15 @@ import Foundation
 import SQLite3
 
 public class Database: Identifiable {
-    public var id = UUID.init().uuidString
-    var pointer: OpaquePointer! = nil
-    lazy var statementLock = UnfairLock()
-    lazy var transactionLock = UnfairLock()
-    var inTransaction: Bool = false
-    private var cachedStatements = [String: RawStatement]()
-    public var disableCacheStatement: Bool = false
 
-    /// TODO: 暂时不支持 tempory 数据库的建立，也不支持 flags
+    private var cachedStatements = [String: RawStatement]()
+    private lazy var statementLock = UnfairLock()
+    private var pointer: OpaquePointer! = nil
+    var disableCacheStatement: Bool = false
+
+    public var id = UUID.init().uuidString
+
+    /// TODO: 暂时不支持 tempory 数据库的建立
 
     // https://www.sqlite.org/c3ref/open.html
     init(path: String, options: OpenOptions? = nil) throws {
@@ -28,7 +28,7 @@ public class Database: Identifiable {
         } else {
             // calling `sqlite3_close` with a NULL pointer argument is a harmless no-op.
             sqlite3_close(pointer)
-            throw SQLiteError.ConnectionError.openFailed("Open database at \(path) failed: \(lastErrorMessage(of: pointer))", ret)
+            throw SQLiteError.SetUpError.openFailed
         }
     }
 
@@ -60,7 +60,7 @@ public class Database: Identifiable {
     ///
     /// - Parameter .0: index, starting from `0`
     /// - Parameter .1: row
-    /// - Parameter .2: 指示是否结束遍历
+    /// - Parameter .2: 指示是否结束遍历 
     public typealias RowIterator = (Int, Base.RowStorage, inout Bool) -> Void
 
     func exec(sql: String, withParams params: [BaseValueConvertible]?, forEach rowIterator: RowIterator) throws {
@@ -89,8 +89,6 @@ public class Database: Identifiable {
         }
     }
 }
-
-public typealias RowIterator = Database.RowIterator
 
 extension Database: Hashable {
     public func hash(into hasher: inout Hasher) {
@@ -132,10 +130,6 @@ extension Database {
         }
     }
 }
-
-typealias DatabaseWorkItem = (Database) -> Void
-typealias TransactionWorkItem = (Database, inout Bool) -> Void
-typealias TransactionMode = Base.TransactionMode
 
 // MARK: Transaction
 
@@ -197,4 +191,14 @@ extension Database {
     }
 }
 
+// MARK: Typealias
+
+public typealias RowIterator = Database.RowIterator
 public typealias OpenOptions = Database.OpenOptions
+
+typealias DatabaseWorkItem = (Database) -> Void
+
+/// About transaction
+typealias Rollback = () -> Void
+typealias TransactionWorkItem = (Database, Rollback) -> Void
+typealias TransactionMode = Base.TransactionMode

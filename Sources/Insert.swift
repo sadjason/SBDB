@@ -77,7 +77,8 @@ extension TableEncodable {
     static func save(
         _ objects: [Self],
         in database: Database,
-        withMode mode: InsertMode = .insert) throws
+        withMode mode: InsertMode = .insert
+    ) throws
     {
         guard objects.count > 0 else {
             return

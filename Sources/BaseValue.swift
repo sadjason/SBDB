@@ -71,6 +71,7 @@ public protocol BaseValueConvertible {
 }
 
 extension BaseValue: BaseValueConvertible {
+    
     public init?(from dbValue: BaseValue) {
         self = dbValue
     }

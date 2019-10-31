@@ -9,25 +9,20 @@
 import Foundation
 import SQLite3
 
+// TODO: 错误信息设计还比较简陋，待完善
+
 enum SQLiteError : Error {
 
-    public typealias Description = String
-    public typealias Reason = String
     public typealias Code = Int32
+    public typealias Description = String
 
-    enum ConnectionError: Error {
-        case openFailed(Reason, Code)
-    }
+    case misuse(Description)
 
     enum StatementError: Error {
-        case prepareFailed(Reason, Code)
-        case stepFailed(Reason, Code)
-        case resetFailed(Reason, Code)
-        case bindFailed(Reason, Code)
-    }
-
-    enum ParameterError: Error {
-        case notValid
+        case prepareFailed(Description, Code)
+        case stepFailed(Description, Code)
+        case resetFailed(Description, Code)
+        case bindFailed(Description, Code)
     }
 
     enum ResultError: Error { 
@@ -38,14 +33,11 @@ enum SQLiteError : Error {
 
     enum SetUpError: Error {
         case setWalModeFailed
+        case openFailed
     }
-
-    case misuse(Description)
 }
 
 func lastErrorMessage(of dabasePointer: OpaquePointer) -> String {
     // `sqlite3_errmsg(nil)` return "out of memory", so do not worry about `db`
     String(cString: sqlite3_errmsg(dabasePointer))
 }
-
-typealias SQLiteExecuteCode = Int32
