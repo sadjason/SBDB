@@ -7,29 +7,12 @@
 //
 
 import UIKit
-import SQLite3
-
-extension AppDelegate {
-    private static var rootPath: String = NSSearchPathForDirectoriesInDomains(
-        .documentDirectory,
-        .userDomainMask,
-        true
-    ).first!
-
-    fileprivate func path(for userId: Int64) throws -> String {
-        let userPath: String = "\(AppDelegate.rootPath)/\(userId)"
-        if !FileManager.default.fileExists(atPath: userPath) {
-            try FileManager.default .createDirectory(atPath: userPath, withIntermediateDirectories: true, attributes: nil)
-        }
-        return "\(userPath)/db.sqlite3"
-    }
-
-}
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
         // Override point for customization after application launch.
 
 //        let count = 2
@@ -83,45 +66,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            print(v2)
 //        }
 //
-//        if let path = try? path(for: 1004),
-//            let db = try? Database(path: path)
-//        {
-//            print("connecting datapath succeed")
-////            try! db.exec(sql: "create table if not exists conversation (id integer primary key not null, name)")
-////            try! db.exec(sql: "insert into conversation(name) values ('王琰')")
-////            try! db.exec(sql: "insert into conversation(name) values (1234)")
-//            try! Participant.create(in: db) { tb in
-//                tb.addColumn("id", type: .text).primaryKey()
-//                tb.addColumn("userId", type: .integer)
-//                tb.addColumn("alias", type: .text)
-//                tb.addColumn("role", type: .integer)
-//                tb.addColumn("orderInConversation", type: .integer)
-//                tb.addColumn("conversationId", type: .integer)
-//                tb.ifNotExists = true
-//            }
-//
-//            let jack = Participant(id: "zw123", userId: 1200, alias: nil, role: 2100, orderInConversation: 12100, conversationId: 1212)
-//            try? jack.insertOrReplace().exec(in: db)
-//            let jason = Participant(id: "zw345", userId: 3400, alias: "Jason", role: 4300, orderInConversation: 34300, conversationId: 343400)
-//            try? jason.insertOrReplace().exec(in: db)
-////            try? Participant.update(or: .ignore).where(Column.Expr("userId") >= 1200).exec(in: db)
-//
-////            try? Participant.update(or: .ignore) { setter in
-////                setter["role"] = BaseValue(storage: .integer(14300))
-////                setter["alias"] = "zw345"
-////            }
-////            .where(Column.Expr("userId") == 3400)
-////            .exec(in: db)
-//
-////             try? Participant.delete().exec(in: db)
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-//                try? Participant.delete().exec(in: db)
-//            }
-//
-////            let jsonDecoder = JSONDecoder()
-//        }
-//
-//        // testCodable()
 
         return true
     }

@@ -65,7 +65,6 @@ extension InsertStatement {
     }
 
     func exec(in database: Database) throws {
-
         try rows.enumerated().forEach { (index, _) in
             let (sql, params) = sqlAndParams(at: index)
             try database.exec(sql: sql, withParams: params)

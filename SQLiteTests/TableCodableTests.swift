@@ -11,8 +11,8 @@ import XCTest
 
 class TableCodableTests: XCTestCase {
 
-    let encoder = TableEncoder()
-    let decoder = TableDecoder()
+    let encoder = TableEncoder.default
+    let decoder = TableDecoder.default
 
     override func setUp() {
 

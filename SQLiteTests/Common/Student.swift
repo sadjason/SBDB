@@ -10,14 +10,14 @@ import Foundation
 @testable import SQLite
 
 struct Student: TableCodable, Equatable {
-    let name: String
-    let age: UInt8
-    let address: String?
-    let grade: Int?
-    let married: Bool
-    let isBoy: Bool?
-    let gpa: Float
-    let extra: Data?
+    var name: String
+    var age: UInt8
+    var address: String?
+    var grade: Int?
+    var married: Bool
+    var isBoy: Bool?
+    var gpa: Float
+    var extra: Data?
 }
 
 private func randomFirstName() -> String {

@@ -11,6 +11,7 @@ import SQLite3
 
 enum SQLiteError : Error {
 
+    public typealias Description = String
     public typealias Reason = String
     public typealias Code = Int32
 
@@ -25,13 +26,21 @@ enum SQLiteError : Error {
         case bindFailed(Reason, Code)
     }
 
-    enum ReadError: Error {
-        case typeMismatch
-    }
-
     enum ParameterError: Error {
         case notValid
     }
+
+    enum ResultError: Error { 
+        case unknownType(Int32)
+        case unexpectedRow(Base.RowStorage?)
+        case unexpectedValue(BaseValueConvertible?)
+    }
+
+    enum SetUpError: Error {
+        case setWalModeFailed
+    }
+
+    case misuse(Description)
 }
 
 func lastErrorMessage(of dabasePointer: OpaquePointer) -> String {

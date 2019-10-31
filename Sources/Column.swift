@@ -243,7 +243,7 @@ extension ColumnDefinition : Expression {
         if let type = type {
             ret += " \(type.rawValue)"
         }
-
+        
         constraints.keys.sorted().forEach { key in
             if case .unique = key, constraints.keys.contains(.primary) {
                 return
@@ -260,10 +260,9 @@ struct ColumnAssignment : SingleParameterExpression {
     let name: String
     let baseValue: BaseValueConvertible
 
-    var sql: String { "\(name) = ? " }
+    var sql: String { "\(name) = \(kParam) " }
     init(name: String, value: BaseValueConvertible) {
         self.name = name
-        self.baseValue = value
+        baseValue = value
     }
 }
-

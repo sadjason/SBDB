@@ -24,7 +24,7 @@ final class RawStatement {
         case finalized
     }
 
-    static let stepSucceedCodes: Set<Int32> = [SQLITE_OK, SQLITE_DONE, SQLITE_ROW]
+    static let stepSucceedCodes: Set<SQLiteCode> = [SQLITE_OK, SQLITE_DONE, SQLITE_ROW]
 
     init(sql: String, database: OpaquePointer) throws {
 
@@ -101,16 +101,14 @@ extension RawStatement {
     }
 }
 
-// MARK: Result Values
+// MARK: Return Result
 
 /// https://www.sqlite.org/c3ref/column_blob.html
 extension RawStatement {
 
-    private func _columnValue(at index: Base.ColumnIndex)
-        throws -> BaseValueConvertible
-    {
-
-        switch sqlite3_column_type(stmtPointer, index) {
+    private func _columnValue(at index: Base.ColumnIndex) throws -> BaseValueConvertible {
+        let type = sqlite3_column_type(stmtPointer, index)
+        switch type {
         case SQLITE_INTEGER: return Int64(sqlite3_column_int64(stmtPointer, index))
         case SQLITE_FLOAT: return Double(sqlite3_column_double(stmtPointer, index))
         case SQLITE_BLOB:
@@ -122,7 +120,7 @@ extension RawStatement {
             }
         case SQLITE_TEXT: return String(cString:sqlite3_column_text(stmtPointer, index))
         case SQLITE_NULL: return Base.null
-        default: throw SQLiteError.ReadError.typeMismatch
+        default: throw SQLiteError.ResultError.unknownType(type)
         }
     }
 
@@ -134,20 +132,32 @@ extension RawStatement {
     /// https://www.sqlite.org/c3ref/column_blob.html
     func readColumn(at index: Base.ColumnIndex) -> BaseValueConvertible? {
         guard index < columnCount() else {
-            return nil
+            return Base.null
         }
-        return try? _columnValue(at: index)
+        do {
+            return try _columnValue(at: index)
+        } catch {
+            // TODO: log error
+            print("readColumn failed: \(error)")
+        }
+        return nil
     }
 
-    func readRow() -> Base.RowStorage? {
+    func readRow() -> Base.RowStorage {
         let colCount = columnCount()
         guard colCount > 0 else {
-            return nil
+            return [:]
         }
         var storage = Base.RowStorage()
         (0..<colCount).forEach { (index) in
             let colName = String(cString: sqlite3_column_name(stmtPointer, Int32(index)))
-            let colValue = (try? _columnValue(at: Int32(index))) ?? Base.null
+            let colValue: BaseValueConvertible
+            do {
+                colValue = try _columnValue(at: Int32(index))
+            } catch {
+                print("readRow failed: \(error)")
+                colValue = Base.null
+            }
             storage[colName] = colValue
         }
         return storage

@@ -54,6 +54,7 @@ extension Base {
 
 extension Base {
 
+    /// https://www.sqlite.org/lang_transaction.html
     public enum TransactionMode: String, Expression {
         case defered
         case immediate
@@ -128,5 +129,33 @@ extension Base {
             }
             return chunk
         }
+    }
+}
+
+extension Base {
+    public typealias SQLiteCode = Int32
+}
+
+// MARK: SQLite Result Code
+
+/// https://www.sqlite.org/c3ref/c_abort.html
+
+public typealias SQLiteCode = Int32
+//public let SQLiteOK = SQLITE_OK
+//public let SQLiteDone = SQLITE_DONE
+//public let SQLiteRow = SQLITE_ROW
+
+
+extension Base {
+
+    /// https://www3.sqlite.org/threadsafe.html
+    public enum ThreadMode: Int32 {
+        case singleThread = 1
+        case multiThread = 2
+        case serialized = 3
+    }
+
+    public static func configThreadMode(_ mode: ThreadMode) -> SQLiteCode {
+        sqlite_config_wrapper(mode.rawValue)
     }
 }

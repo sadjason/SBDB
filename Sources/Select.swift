@@ -9,12 +9,6 @@
 import Foundation
 import SQLite3
 
-/**
- 简单的 select 语句有两种类型：聚合查询、非聚合查询
-
- https://github.com/Tencent/wcdb/wiki/Swift-%e5%a2%9e%e5%88%a0%e6%9f%a5%e6%94%b9
- */
-
 // MARK: Result Column
 
 enum ResultColumn: Expression {
@@ -35,10 +29,7 @@ enum ResultColumn: Expression {
     }
 }
 
-/**
- 什么时候 from 语句可以省略
- */
-
+/// 简单的 select 语句，支持聚合查询、非聚合查询
 /// https://www.sqlite.org/lang_select.html
 struct Select: Expression {
 
@@ -90,32 +81,11 @@ struct Select: Expression {
     }
 }
 
+// MARK: - Query
+
 extension TableDecodable {
 
-    private static func _statement(
-        in database: Database,
-        with sql: String,
-        params: [BaseValueConvertible]?) throws -> RawStatement
-    {
-        let stmt: RawStatement
-        if let s = database.popStatement(forKey: sql) {
-            try s.reset()
-            stmt = s
-        } else {
-            stmt = try RawStatement(sql: sql, database: database.db)
-        }
-
-        defer {
-            database.pushStatement(stmt, forKey: sql)
-        }
-
-        try params?.enumerated().forEach { (index, param) in
-            try stmt.bind(param.baseValue, to: Base.ColumnIndex(index + 1))
-        }
-        return stmt
-    }
-
-    static func fetchObjects(
+    private static func _fetchObjects(
         from database: Database,
         on columns: [ResultColumn] = [ResultColumn.all],
         where condition: Condition? = nil,
@@ -129,26 +99,40 @@ extension TableDecodable {
         query.limit = limit
         query.offset = offset
 
-        let (sql, params) = (query.sql, query.params)
-        let stmt = try _statement(in: database, with: sql, params: params)
-        defer {
-            database.pushStatement(stmt, forKey: sql)
-        }
-
         var objects = [Self]()
-        var ret: SQLiteExecuteCode
-        repeat {
-            ret = try stmt.step()
-            if ret == SQLITE_ROW,
-                let row = stmt.readRow(),
-                let obj: Self = try? TableDecoder.default.decode(Self.self, from: row)
-            {
+        try database.exec(sql: query.sql, withParams: query.params) { (_, row, _) in
+            if let obj = try? TableDecoder.default.decode(Self.self, from: row) {
                 objects.append(obj)
             }
-        } while ret == SQLITE_ROW
+        }
 
         return objects
     }
+
+    // MARK: Query Multi Objects
+
+    static func fetchObjects(from database: Database) throws -> [Self] {
+        try _fetchObjects(from: database)
+    }
+
+    static func fetchObjects(from database: Database, where condition: Condition) throws -> [Self] {
+        try _fetchObjects(from: database, where: condition)
+    }
+
+    static func fetchObjects(from database: Database, orderBy orderTerms:[Base.OrderTerm])throws -> [Self] {
+        try _fetchObjects(from: database, orderBy: orderTerms)
+    }
+
+    static func fetchObjects(
+        from database: Database,
+        where condition: Condition,
+        orderBy orderTerms:[Base.OrderTerm]
+    ) throws -> [Self]
+    {
+        try _fetchObjects(from: database, where: condition, orderBy: orderTerms)
+    }
+
+    // MARK: Query One Object
 
     static func fetchObject(
         from database: Database,
@@ -156,8 +140,10 @@ extension TableDecodable {
         where condition: Condition? = nil,
         orderBy orderTerms:[Base.OrderTerm]? = nil) throws -> Self?
     {
-        try fetchObjects(from: database, on: columns, where: condition, orderBy: orderTerms, limit: 1, offset: nil).first
+        try _fetchObjects(from: database, on: columns, where: condition, orderBy: orderTerms, limit: 1, offset: nil).first
     }
+
+    // MARK: Query One Column
 
     static func fetchColumn(
         from database: Database,
@@ -165,10 +151,11 @@ extension TableDecodable {
         where condition: Condition? = nil,
         orderBy orderTerms:[Base.OrderTerm]? = nil,
         limit: Int? = nil,
-        offset: Int? = nil) throws -> [BaseValueConvertible]
+        offset: Int? = nil
+    ) throws -> [BaseValueConvertible]
     {
         if case .all = column {
-            throw SQLiteError.ParameterError.notValid
+            throw SQLiteError.misuse("ResultColumn should not be `.all`")
         }
 
         var query = Select(from: self.tableName, on: [column])
@@ -177,21 +164,17 @@ extension TableDecodable {
         query.limit = limit
         query.offset = offset
 
-        let (sql, params) = (query.sql, query.params)
-        let stmt = try _statement(in: database, with: sql, params: params)
-        defer {
-            database.pushStatement(stmt, forKey: sql)
-        }
-
         var values = [BaseValueConvertible]()
-        var ret: SQLiteExecuteCode
-        repeat {
-            ret = try stmt.step()
-            if ret == SQLITE_ROW, let col = stmt.readColumn(at: 0) {
-                values.append(col)
+        try database.exec(sql: query.sql, withParams: query.params) { (_, row, _) in
+            if let value = row.values.first {
+                values.append(value)
             }
-        } while ret == SQLITE_ROW
+        }
 
         return values
     }
+
+    // MARK: Query Multi Columns
+
+    // To be continue...
 }

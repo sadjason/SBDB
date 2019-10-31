@@ -79,7 +79,7 @@ public class UpdateStatement<T: TableEncodable>: ParameterExpression {
 
         print("exec update sql: \(sql)")
 
-        let stmt = try RawStatement(sql: sql, database: database.db)
+        let stmt = try RawStatement(sql: sql, database: database.pointer)
 
         var index: Base.ColumnIndex = 1
         for param in params ?? [] {

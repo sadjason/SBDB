@@ -25,7 +25,7 @@ class InsertTests: XCTestCase {
     var db: Database!
 
     override func setUp() {
-        db = try? openDatabase()
+        db = try? Util.openDatabase()
         try? Student.create(in: db) { (tb) in
             tb.ifNotExists = true
 
