@@ -6,7 +6,7 @@ target 'SQLite' do
   use_frameworks!
 
   # Pods for SQLite
-  pod 'SnapKit'
+  pod 'FMDB'
 
   target 'SQLiteTests' do
     inherit! :search_paths

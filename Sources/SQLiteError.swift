@@ -9,31 +9,41 @@
 import Foundation
 import SQLite3
 
-// TODO: 错误信息设计还比较简陋，待完善
-
-enum SQLiteError : Error {
+public enum SQLiteError: Error {
 
     public typealias Code = Int32
     public typealias Description = String
 
     case misuse(Description)
-
-    enum StatementError: Error {
-        case prepareFailed(Description, Code)
+    
+    public enum ExecuteError: Error {
+        case prepareStmtFailed(Description, Code)
+        case bindParamFailed(Description, Code)
         case stepFailed(Description, Code)
-        case resetFailed(Description, Code)
-        case bindFailed(Description, Code)
+    }
+    
+    public enum TransactionError: Error {
+        case begin(Description, Code)
+        case commit(Description, Code)
+        case rollback(Description, Code)
     }
 
-    enum ResultError: Error { 
+    public enum ResultError: Error {
         case unknownType(Int32)
         case unexpectedRow(Base.RowStorage?)
         case unexpectedValue(BaseValueConvertible?)
     }
 
-    enum SetUpError: Error {
+    public enum SetUpError: Error {
         case setWalModeFailed
         case openFailed
+    }
+    
+    // sqlite3 原生 API 错误，不对外暴露
+    enum LibraryError: Error {
+        case prepareStatementFailed
+        case stepStementFailed
+        case bindParameterFailed
     }
 }
 

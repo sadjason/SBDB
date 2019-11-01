@@ -24,13 +24,13 @@ class SingleThread: XCTestCase {
     var database: Database!
 
     override func setUp() {
-        let ret = Base.configThreadMode(.multiThread)
-        if SQLITE_OK == ret {
-            print("set single-thread succeed")
-        } else {
-            print("set single-thread failed: \(ret)")
-        }
-        database = try? Util.openDatabase(options: [.create, .readwrite, .noMutex])
+//        let ret = Base.configThreadMode(.multiThread)
+//        if SQLITE_OK == ret {
+//            print("set single-thread succeed")
+//        } else {
+//            print("set single-thread failed: \(ret)")
+//        }
+//        database = try? Util.openDatabase(options: [.create, .readwrite, .noMutex])
     }
 
     override func tearDown() {

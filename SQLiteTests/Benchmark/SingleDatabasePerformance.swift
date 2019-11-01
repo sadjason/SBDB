@@ -39,7 +39,7 @@ class SingleDatabasePerformance: XCTestCase {
 
     /// Insert 性能测试（单线程，不使用 statement 缓存）
     func testInsertPerformanceWithoutCachingStatement() {
-        db.disableCacheStatement = true
+        Database.disableStatementCache = true
         try? Student.delete(in: db)
         let s = Student(name: "Jason", age: 27, address: nil,
                         grade: 12, married: true, isBoy: true,
@@ -53,7 +53,7 @@ class SingleDatabasePerformance: XCTestCase {
 
     /// Insert 性能测试（单线程，使用 statement 缓存）
     func testInsertPerformanceWithCachingStatement() {
-        db.disableCacheStatement = false
+        Database.disableStatementCache = false
         try? Student.delete(in: db)
         let s = Student(name: "Jason", age: 27, address: nil,
                         grade: 12, married: true, isBoy: true,

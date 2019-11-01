@@ -105,7 +105,7 @@ extension DatabasePool {
     /// - Parameter mode: 事务模式
     /// - Parameter workItem: 访问 database
     func write(
-        transaction mode: TransactionMode = .defered,
+        transaction mode: TransactionMode = .deferred,
         execute workItem: DatabaseWorkItem
     ) throws {
         try writeQueue.inDatabasae(execute: workItem)

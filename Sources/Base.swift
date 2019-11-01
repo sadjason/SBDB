@@ -56,8 +56,17 @@ extension Base {
 
     /// https://www.sqlite.org/lang_transaction.html
     public enum TransactionMode: String, Expression {
-        case defered
+        /// Means that the transaction does not actually start
+        /// until the database is first accessed.
+        case deferred
+
+        /// Cause the database connection to start a new write immediately,
+        /// without waiting for a writes statement.
         case immediate
+
+        /// `exclusive` is similar to `immediate` in that a write transaction is started immediately.
+        /// `exclusive` and `immediate` are the same in WAL mode, but in other journaling modes,
+        /// `exclusive` prevents other database connections from reading the database while the transaction is underway.
         case exclusive
     }
 }

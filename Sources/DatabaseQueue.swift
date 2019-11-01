@@ -17,15 +17,17 @@ final public class DatabaseQueue {
     private let queueKey: DispatchSpecificKey<String>
 
     private var database: Database?
+    
+    public let label: String?
 
-    init(path: String, options: OpenOptions? = nil) {
+    init(path: String, options: OpenOptions? = nil, label: String? = nil) {
         self.path = path
         self.options = options
+        self.label = label
 
-        let label = "database.queue.\(UUID.init().uuidString)"
         queueKey = DispatchSpecificKey<String>()
-        queue = DispatchQueue(label: label)
-        queue.setSpecific(key: queueKey, value: label)
+        queue = DispatchQueue(label: "database.queue.\(UUID.init().uuidString)")
+        queue.setSpecific(key: queueKey, value: queue.label)
     }
 
     private func checkDatabase() throws -> Database {
@@ -38,11 +40,13 @@ final public class DatabaseQueue {
 
     private func checkQueue() throws {
         guard DispatchQueue.getSpecific(key: queueKey) != queue.label else {
+            // 死锁，很可能是重入造成的
             throw SQLiteError.misuse("avoid deadlock")
         }
     }
 
-    /// 访问数据库
+    /// 非事务访问数据库
+    ///
     /// - Parameter workItem: The work item to be invoked on the queue
     func inDatabasae(execute workItem: DatabaseWorkItem) throws {
         try checkQueue()
@@ -59,7 +63,7 @@ final public class DatabaseQueue {
     /// - Parameter workItem: The work item to be invoked on the queue
     /// - See also /// https://www.sqlite.org/lang_transaction.html
     func inTransaction(
-        mode: TransactionMode = .defered,
+        mode: TransactionMode = .deferred,
         execute workItem: TransactionWorkItem
     ) throws
     {
@@ -79,28 +83,5 @@ final public class DatabaseQueue {
                 try database.endTransaction()
             }
         }
-    }
-}
-
-extension DatabaseQueue {
-
-    func async(execute workItem: @escaping DatabaseWorkItem) {
-        DispatchQueue.global().async { [weak self] in
-            try? self?.inDatabasae(execute: workItem)
-        }
-    }
-
-    func sync(execute workItem: @escaping DatabaseWorkItem) {
-        try? inDatabasae(execute: workItem)
-    }
-
-    func async(transaction mode: TransactionMode = .defered, execute workItem: @escaping TransactionWorkItem) {
-        DispatchQueue.global().async { [weak self] in
-            try? self?.inTransaction(mode: mode, execute: workItem)
-        }
-    }
-
-    func sync(transaction mode: TransactionMode = .defered, execute workItem: TransactionWorkItem) {
-        try? inTransaction(mode: mode, execute: workItem)
     }
 }

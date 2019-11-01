@@ -13,18 +13,8 @@ import SQLite3
 final class RawStatement {
 
     private let sql: String
-    fileprivate let dbPointer: OpaquePointer
-    fileprivate let stmtPointer: OpaquePointer
-    fileprivate var status: Status
-
-    fileprivate enum Status {
-        case prepared
-        case steped
-        case reseted
-        case finalized
-    }
-
-    static let stepSucceedCodes: Set<SQLiteCode> = [SQLITE_OK, SQLITE_DONE, SQLITE_ROW]
+    private let dbPointer: OpaquePointer
+    private let stmtPointer: OpaquePointer
 
     init(sql: String, database: OpaquePointer) throws {
 
@@ -33,42 +23,35 @@ final class RawStatement {
         var pStmt: OpaquePointer? = nil
         let ret = sqlite3_prepare_v2(database, sql, Int32(sql.utf8.count), &pStmt, nil)
         guard ret == SQLITE_OK else {
-            throw SQLiteError.StatementError.prepareFailed(lastErrorMessage(of: database), ret)
+            throw SQLiteError.LibraryError.prepareStatementFailed
         }
         guard let stmt = pStmt else {
-            throw SQLiteError.StatementError.prepareFailed("sql is empty", ret)
+            fatalError("sql cannot be empty")
         }
 
         self.sql = sql
         self.dbPointer = database
-        self.status = .prepared
         self.stmtPointer = stmt
     }
-
-    deinit {
-        /// https://www.sqlite.org/c3ref/finalize.html
+    
+    /// https://www.sqlite.org/c3ref/finalize.html
+    // 需要手动 finalize，不能靠析构，否则存在线程问题：
+    // [logging] BUG IN CLIENT OF libsqlite3.dylib: illegal multi-threaded access to database connection
+    func finalize() {
         // Invoking sqlite3_finalize() on a NULL pointer is a harmless no-op.
         sqlite3_finalize(stmtPointer)
     }
 
     /// https://www.sqlite.org/c3ref/step.html
     @discardableResult
-    func step() throws -> SQLiteCode {
-        let ret = sqlite3_step(stmtPointer)
-        status = .steped
-        guard RawStatement.stepSucceedCodes.contains(ret) else {
-            throw SQLiteError.StatementError.stepFailed(lastErrorMessage(of: dbPointer), ret)
-        }
-        return ret
+    func step() -> SQLiteCode {
+        sqlite3_step(stmtPointer)
     }
 
     /// https://www.sqlite.org/c3ref/reset.html
-    func reset() throws {
-        let ret = sqlite3_reset(stmtPointer)
-        status = .reseted
-        guard ret == SQLITE_OK else {
-            throw SQLiteError.StatementError.resetFailed(lastErrorMessage(of: dbPointer), ret)
-        }
+    @discardableResult
+    func reset() -> SQLiteCode {
+        sqlite3_reset(stmtPointer)
     }
 }
 
@@ -96,7 +79,7 @@ extension RawStatement {
             }
         }
         guard ret == SQLITE_OK else {
-            throw SQLiteError.StatementError.bindFailed(lastErrorMessage(of: dbPointer), ret)
+            throw SQLiteError.LibraryError.bindParameterFailed
         }
     }
 }
