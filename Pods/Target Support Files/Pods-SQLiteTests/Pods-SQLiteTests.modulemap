@@ -1,6 +1,0 @@
-framework module Pods_SQLiteTests {
-  umbrella header "Pods-SQLiteTests-umbrella.h"
-
-  export *
-  module * { export * }
-}
