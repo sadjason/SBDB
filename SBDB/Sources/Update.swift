@@ -10,35 +10,43 @@ import Foundation
 
 /// https://www.sqlite.org/lang_update.html
 
-public class UpdateStatement<T: TableEncodable>: ParameterExpression {
-
-    enum IndexedStrategy: Expression {
-        case none
-        case indexed(String)
-
-        var sql: String {
-            switch self {
-            case .none:
-                return "not indexed"
-            case .indexed(let name):
-                return "indexed by \(name)"
-            }
+public enum UpdateMode: Expression {
+    case update
+    case updateOr(Base.Conflict)
+    
+    var sql: String {
+        switch self {
+        case .update: return "update"
+        case .updateOr(let conflict): return "update or \(conflict.sql)"
         }
     }
+}
 
-    private let onConflict: Base.Conflict?
-    private var indexedStrategy: IndexedStrategy = .none
-    private var whereCondition: Condition?
-    private var assignments = [String: ColumnAssignment]()
+struct UpdateStatement {
+    
+    private let tableName: String
+    private let mode: UpdateMode
+    private let whereCondition: Condition?
+    private let assignment: UpdateAssignment
+    
+    init(
+        tableName: String,
+        assigment: UpdateAssignment,
+        mode: UpdateMode = .update,
+        where condition: Condition? = nil)
+    {
+        self.tableName = tableName
+        self.assignment = assigment
+        self.mode = mode
+        self.whereCondition = condition
+    }
+}
 
+extension UpdateStatement: ParameterExpression {
     var sql: String {
-        var conflictStr = ""
-        if let conflict = onConflict {
-            conflictStr = "or \(conflict.sql)"
-        }
-        var chunk = "update \(conflictStr) \(T.tableName)"
+        var chunk = "\(mode.sql) \(tableName)"
 
-        let assigns = assignments.keys.sorted().map { "\($0) = ?" }.joined(separator: ",")
+        let assigns = assignment.keys.sorted().map { "\($0) = \(ParameterPlaceholder)" }.joined(separator: ",")
         chunk += " set \(assigns)"
 
         if let cond = whereCondition {
@@ -49,65 +57,31 @@ public class UpdateStatement<T: TableEncodable>: ParameterExpression {
     }
 
     var params: [BaseValueConvertible]? {
-        let columnValues = assignments.keys.sorted().map { assignments[$0]!.baseValue }
-        return columnValues + (whereCondition?.params ?? [])
-    }
-
-    init(onConflict: Base.Conflict? = nil) {
-        self.onConflict = onConflict
-    }
-
-    @discardableResult
-    func indexed(by name: String) -> Self {
-        indexedStrategy = .indexed(name)
-        return self
-    }
-
-    @discardableResult
-    func `where`(_ cond: Condition) -> Self {
-        precondition(whereCondition == nil, "You can only invoke `where` once")
-
-        whereCondition = cond
-        return self
-    }
-
-    func assign(_ value: BaseValueConvertible, toColumn name: String) {
-        assignments[name] = ColumnAssignment(name: name, value: value)
-    }
-
-    func exec(in database: Database) throws {
-
-        print("exec update sql: \(sql)")
-
-        try database.exec(sql: sql, withParams: params)
+        assignment.keys.sorted().map { assignment[$0]! } + (whereCondition?.params ?? [])
     }
 }
 
+public typealias UpdateAssignment = Dictionary<String, BaseValueConvertible>
+
 extension TableEncodable {
-
-    public typealias ColumnValueMap = Dictionary<String, BaseValueConvertible>
-
-    public static func update(closure: (inout ColumnValueMap) -> Void) -> UpdateStatement<Self> {
-        let stmt = UpdateStatement<Self>()
-        var map = ColumnValueMap()
-        closure(&map)
-        for (name, value) in map {
-            stmt.assign(value, toColumn: name)
-        }
-        return stmt
+    
+    static func update(
+        in db: Database,
+        assignment: UpdateAssignment,
+        withMode mode: UpdateMode = .update,
+        where condition: Condition? = nil
+    ) throws {
+        let stmt = UpdateStatement(tableName: tableName, assigment: assignment, mode: mode, where: condition)
+        try db.exec(sql: stmt.sql, withParams: stmt.params)
     }
     
-    public static func update(
-        or conflictStrategy: Base.Conflict,
-        closure: (inout ColumnValueMap) -> Void
-    ) -> UpdateStatement<Self>
-    {
-        let stmt = UpdateStatement<Self>(onConflict: conflictStrategy)
-        var map = ColumnValueMap()
-        closure(&map)
-        for (name, value) in map {
-            stmt.assign(value, toColumn: name)
-        }
-        return stmt
+    static func update(
+        in db: Database,
+        where condition: Condition,
+        assign: (inout UpdateAssignment) -> Void
+    ) throws {
+        var assignment = UpdateAssignment()
+        assign(&assignment)
+        try update(in: db, assignment: assignment, withMode: .update, where: condition)
     }
 }

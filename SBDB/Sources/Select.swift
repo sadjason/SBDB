@@ -31,7 +31,7 @@ enum ResultColumn: Expression {
 
 /// 简单的 select 语句，支持聚合查询、非聚合查询
 /// https://www.sqlite.org/lang_select.html
-struct Select: Expression {
+struct SelectStatement: Expression {
 
     enum Mode: String, Expression {
         case distinct
@@ -93,7 +93,7 @@ extension TableDecodable {
         limit: Int? = nil,
         offset: Int? = nil) throws -> [Self]
     {
-        var query = Select(from: self.tableName, on: columns)
+        var query = SelectStatement(from: self.tableName, on: columns)
         query.whereCondtion = condition
         query.orderTerms = orderTerms
         query.limit = limit
@@ -158,7 +158,7 @@ extension TableDecodable {
             throw SQLiteError.misuse("ResultColumn should not be `.all`")
         }
 
-        var query = Select(from: self.tableName, on: [column])
+        var query = SelectStatement(from: self.tableName, on: [column])
         query.whereCondtion = condition
         query.orderTerms = orderTerms
         query.limit = limit

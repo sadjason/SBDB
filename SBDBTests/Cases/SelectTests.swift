@@ -9,6 +9,7 @@
 import XCTest
 @testable import SBDB
 
+/// Select 相关 cases
 class SelectTests: XCTestCase {
 
     var database: Database!

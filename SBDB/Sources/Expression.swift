@@ -68,7 +68,7 @@ extension SingleParameterExpression {
 
 // MARK: - Condition
 
-struct Condition: ParameterExpression {
+public struct Condition: ParameterExpression {
     var sql: String
     var params: [BaseValueConvertible]?
 }

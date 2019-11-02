@@ -11,23 +11,18 @@ import SQLite3
 
 /// https://www.sqlite.org/lang_insert.html
 
-public struct InsertStatement {
-    public enum Mode {
-        case insert
-        case replace
-        case insertOr(Base.Conflict)
-    }
+struct InsertStatement {
 
     let tableName: String
-    let mode: Mode
+    let mode: InsertMode
 
     var rows: [Base.RowStorage]
 
     init(
         tableName: String,
         rows: [Base.RowStorage] = [],
-        mode: Mode = .insert
-    ) {
+        mode: InsertMode = .insert)
+    {
         self.tableName = tableName
         self.rows = rows
         self.mode = mode
@@ -38,9 +33,13 @@ public struct InsertStatement {
     }
 }
 
-public typealias InsertMode = InsertStatement.Mode
+public enum InsertMode {
+    case insert
+    case replace
+    case insertOr(Base.Conflict)
+}
 
-extension InsertStatement.Mode : Expression {
+extension InsertMode : Expression {
     var sql: String {
         switch self {
         case .insert: return "insert"

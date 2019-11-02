@@ -8,16 +8,21 @@
 
 import Foundation
 
-class DeleteStatement {
+/// https://www.sqlite.org/lang_delete.html
 
-    var whereCondition: Condition?
+struct DeleteStatement {
 
+    let whereCondition: Condition?
     let tableName: String
 
-    init(tableName: String) {
+    init(tableName: String, where condition: Condition? = nil) {
         self.tableName = tableName
+        whereCondition = condition
     }
+}
 
+extension DeleteStatement: ParameterExpression {
+    
     var sql: String {
         var chunk = "delete from \(tableName)"
 
@@ -35,14 +40,9 @@ class DeleteStatement {
 
 extension TableEncodable {
 
-    static func delete(
-        in database: Database,
-        where condition: Condition? = nil) throws
-    {
-        let deleteStmt = DeleteStatement(tableName: Self.tableName)
-        if let cond = condition {
-            deleteStmt.whereCondition = cond
-        }
+    static func delete(in database: Database, where condition: Condition? = nil) throws {
+        let deleteStmt = DeleteStatement(tableName: Self.tableName, where: condition)
         try database.exec(sql: deleteStmt.sql, withParams: deleteStmt.params)
     }
+
 }

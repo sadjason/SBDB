@@ -254,15 +254,3 @@ extension ColumnDefinition : Expression {
     }
 }
 
-// MARK: - ColumnAssignment
-
-struct ColumnAssignment : SingleParameterExpression {
-    let name: String
-    let baseValue: BaseValueConvertible
-
-    var sql: String { "\(name) = \(kParam) " }
-    init(name: String, value: BaseValueConvertible) {
-        self.name = name
-        baseValue = value
-    }
-}

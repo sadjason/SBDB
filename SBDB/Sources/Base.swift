@@ -125,6 +125,12 @@ extension Base {
         init(columnName: Base.ColumnName) {
             self.column = Column(columnName)
         }
+        
+        init(columnName: Base.ColumnName, strategy: Base.Order) {
+            self.column = Column(columnName)
+            self.strategy = strategy
+        }
+        
         // 暂时不支持 onCollation，似乎用不到
         // var onCollation: Base.Collate? = nil
 
@@ -137,6 +143,23 @@ extension Base {
                 chunk += " \(nullStrategy.sql)"
             }
             return chunk
+        }
+    }
+}
+
+extension Base {
+    
+    enum IndexedStrategy: Expression {
+        case none
+        case indexed(String)
+
+        var sql: String {
+            switch self {
+            case .none:
+                return "not indexed"
+            case .indexed(let name):
+                return "indexed by \(name)"
+            }
         }
     }
 }
