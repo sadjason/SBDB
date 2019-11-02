@@ -15,16 +15,12 @@ class SelectTests: XCTestCase {
 
     override func setUp() {
         database = try! Util.openDatabase()
-        try! Student.delete(in: database)
-    }
-
-    override func tearDown() {
-
+        try? Student.delete(in: database)
     }
 
     /// 插入一条数据，然后取出，前后二者是相等的
     func testInsertOne() throws {
-        let s1 = generateStudent()
+        let s1 = Util.generateStudent()
         try s1.save(in: database)
         let s2 = try Student.fetchObject(from: database)
         print(s1)
@@ -35,7 +31,7 @@ class SelectTests: XCTestCase {
     /// 测试 where：插入多条数据，然后能根据条件将其选出来
     func testWhere() throws {
         let students = (1...100).map { (index) -> Student in
-            var s = generateStudent()
+            var s = Util.generateStudent()
             s.age = UInt8(index)
             s.isBoy = (index % 2 == 1)
             return s
@@ -54,7 +50,7 @@ class SelectTests: XCTestCase {
     /// 测试 order：确保返回值的顺序是正确的
     func testOrder() throws {
         let students = (1...100).map { (index) -> Student in
-            var s = generateStudent()
+            var s = Util.generateStudent()
             s.age = UInt8(index)
             s.isBoy = (index % 2 == 1)
             return s

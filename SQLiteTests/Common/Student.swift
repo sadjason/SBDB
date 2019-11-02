@@ -41,29 +41,52 @@ private func randomChineseChar() -> String? {
     return nil
 }
 
-func generateStudent() -> Student {
-    let c1 = randomFirstName()
-    let c2 = randomChineseChar()
-    let c3 = randomChineseChar()
+extension Util {
+    static func generateStudent() -> Student {
+        let c1 = randomFirstName()
+        let c2 = randomChineseChar()
+        let c3 = randomChineseChar()
 
 
-    let name = (c2 != nil && c3 != nil) ? "\(c1)\(c2!)\(c3!)" : "无名"
-    let age = UInt8(arc4random_uniform(100))
-    let grade = Int(arc4random_uniform(6))
-    let gpa: Float = Float(((arc4random_uniform(100) % 5) + 1)) / 5.0
-    let yesOrNo: Bool = (arc4random_uniform(100) % 2) > 0
-    let noOrYes: Bool = (arc4random_uniform(100) % 2) > 0
+        let name = (c2 != nil && c3 != nil) ? "\(c1)\(c2!)\(c3!)" : "无名"
+        let age = UInt8(arc4random_uniform(100))
+        let grade = Int(arc4random_uniform(6))
+        let gpa: Float = Float(((arc4random_uniform(100) % 5) + 1)) / 5.0
+        let yesOrNo: Bool = (arc4random_uniform(100) % 2) > 0
+        let noOrYes: Bool = (arc4random_uniform(100) % 2) > 0
 
-    let extra = ["name": name, "age": String(age)]
+        let extra = ["name": name, "age": String(age)]
 
-    return Student(
-        name: name,
-        age: age,
-        address: yesOrNo ? "中国: \(name)" : nil,
-        grade: noOrYes ? grade : nil,
-        married: yesOrNo,
-        isBoy: yesOrNo ? noOrYes : nil,
-        gpa: gpa,
-        extra: noOrYes ? try! JSONEncoder().encode(extra) : nil
-    )
+        return Student(
+            name: name,
+            age: age,
+            address: yesOrNo ? "中国: \(name)" : nil,
+            grade: noOrYes ? grade : nil,
+            married: yesOrNo,
+            isBoy: yesOrNo ? noOrYes : nil,
+            gpa: gpa,
+            extra: noOrYes ? try! JSONEncoder().encode(extra) : nil
+        )
+    }
+
+}
+
+extension Util {
+    static func createStudentTable() throws {
+        try createDatabaseQueue().inDatabasae { (db) in
+            try? Student.create(in: db) { (tb) in
+                tb.ifNotExists = true
+
+                tb.column("id", type: .integer).primaryKey()
+                tb.column("name", type: .text).notNull()
+                tb.column("age", type: .integer).notNull()
+                tb.column("address", type: .text)
+                tb.column("grade", type: .integer)
+                tb.column("married", type: .integer)
+                tb.column("isBoy", type: .integer)
+                tb.column("gpa", type: .real)
+                tb.column("extra", type: .blob)
+            }
+        }
+    }
 }

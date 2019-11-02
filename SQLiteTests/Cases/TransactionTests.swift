@@ -12,6 +12,9 @@ import SQLite3
 
 /// 分析研究隐式、显式的 transaction
 /// See also: https://www.sqlite.org/lang_transaction.html
+/// TODO:
+///   * Response To Errors Within A Transaction 还没理解清楚
+///   * Busy 处理机制
 class TransactionTests: XCTestCase {
 
     override func setUp() {
@@ -58,7 +61,7 @@ class TransactionTests: XCTestCase {
             do {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
-                        try generateStudent().save(in: db)
+                        try Util.generateStudent().save(in: db)
                     } catch {
                         XCTFail()
                     }
@@ -79,8 +82,8 @@ class TransactionTests: XCTestCase {
         // transaction 1
         DispatchQueue.global().async {
             // 插入两条数据，以防 select 语句自动结束事务
-            try! generateStudent().save(in: db)
-            try! generateStudent().save(in: db)
+            try! Util.generateStudent().save(in: db)
+            try! Util.generateStudent().save(in: db)
             let stmt = try! RawStatement(sql: "select * from student", database: db.pointer)
             stmt.step()
             DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
@@ -96,7 +99,7 @@ class TransactionTests: XCTestCase {
             do {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
-                        try generateStudent().save(in: db)
+                        try Util.generateStudent().save(in: db)
                     } catch {
                         XCTFail()
                     }
@@ -119,7 +122,7 @@ class TransactionTests: XCTestCase {
             do {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
-                        try generateStudent().save(in: db)
+                        try Util.generateStudent().save(in: db)
                     } catch {
                         XCTFail()
                     }
@@ -140,8 +143,8 @@ class TransactionTests: XCTestCase {
         // transaction 1
         DispatchQueue.global().async {
             // 插入两条数据，以防 select 语句自动结束事务
-            try! generateStudent().save(in: db)
-            try! generateStudent().save(in: db)
+            try! Util.generateStudent().save(in: db)
+            try! Util.generateStudent().save(in: db)
             let stmt = try! RawStatement(sql: "select * from student", database: db.pointer)
             stmt.step()
             DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
@@ -157,7 +160,7 @@ class TransactionTests: XCTestCase {
             do {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
-                        try generateStudent().save(in: db)
+                        try Util.generateStudent().save(in: db)
                     } catch {
                         XCTFail()
                     }
@@ -180,7 +183,7 @@ class TransactionTests: XCTestCase {
             do {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
-                        try generateStudent().save(in: db)
+                        try Util.generateStudent().save(in: db)
                     } catch {
                         XCTFail()
                     }

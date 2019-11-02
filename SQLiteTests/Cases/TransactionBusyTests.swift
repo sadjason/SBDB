@@ -1,15 +1,15 @@
 //
-//  SQLiteTests.swift
+//  TransactionBusyTests.swift
 //  SQLiteTests
 //
-//  Created by zhangwei on 2019/10/17.
+//  Created by zhangwei on 2019/11/1.
 //  Copyright © 2019 ByteDance. All rights reserved.
 //
 
 import XCTest
-@testable import SQLite
 
-class SQLiteTests: XCTestCase {
+/// 研究 busy 相关
+class TransactionBusyTests: XCTestCase {
 
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.

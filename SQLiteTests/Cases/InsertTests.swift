@@ -29,7 +29,7 @@ class InsertTests: XCTestCase {
         try? Student.create(in: db) { (tb) in
             tb.ifNotExists = true
 
-//            tb.column("id", type: .integer).primaryKey()
+            tb.column("id", type: .integer).primaryKey()
             tb.column("name", type: .text).notNull()
             tb.column("age", type: .integer).notNull()
             tb.column("address", type: .text)
@@ -46,18 +46,18 @@ class InsertTests: XCTestCase {
     }
 
     func testInsertOne1() throws {
-        try Student.save([generateStudent()], in: db)
+        try Student.save([Util.generateStudent()], in: db)
     }
 
     func testInsertOne2() throws {
-        try generateStudent().save(in: db)
+        try Util.generateStudent().save(in: db)
     }
 
     func testInsertOneByOne() throws {
         for _ in 0..<100 {
-            let s1 = generateStudent()
+            let s1 = Util.generateStudent()
             try Student.save([s1], in: db)
-            let s2 = generateStudent()
+            let s2 = Util.generateStudent()
             try s2.save(in: db)
         }
     }

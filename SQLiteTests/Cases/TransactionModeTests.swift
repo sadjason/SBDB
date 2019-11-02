@@ -10,7 +10,7 @@ import XCTest
 @testable import SQLite
 import SQLite3
 
-/// 研究非 WAL 模式下各个 transaction mode
+/// 研究分析非 WAL 模式下各个 transaction mode
 ///     WAL 模式下 exclusive 和 immediate 等价
 /// See also: https://www.sqlite.org/lang_transaction.html
 
@@ -78,7 +78,7 @@ class TransactionModeTests: XCTestCase {
                         case .read:
                             let _ = try Student.fetchObject(from: db)
                         case .write:
-                            try generateStudent().save(in: db)
+                            try Util.generateStudent().save(in: db)
                         }
                         if let s = transaction.sleep {
                             Thread.sleep(forTimeInterval: s)
@@ -94,6 +94,7 @@ class TransactionModeTests: XCTestCase {
     }
 
     // MARK: deferred 读事务对其他事务的影响
+    
     func testDeferredReadTransactionIsActive() {
         let activeTransaction = Transaction(mode: .deferred, type: .read, delay: 0.0, sleep: 1.8)
         runTransaction(activeTransaction, errorHandler: nil)
@@ -311,7 +312,7 @@ class TransactionModeTests: XCTestCase {
         _immediateTransactionIsActive()
     }
     
-    // MAKR: immediate 事务对其他事务的影响
+    // MARK: immediate 事务对其他事务的影响
     
     func _exclusiveTransactionIsActive() {
         // 对 deferred 事务有影响: prepare statement 阶段报错 SQLITE_BUSY
@@ -353,7 +354,7 @@ class TransactionModeTests: XCTestCase {
         Thread.sleep(forTimeInterval: 2.0)
     }
     
-    // MAKR: exclusive 事务对其他事务的影响
+    // MARK: exclusive 事务对其他事务的影响
     
     func testExclusiveReadTransactionIsActive() {
         let activeTransaction = Transaction(mode: .exclusive, type: .read, delay: 0.0, sleep: 1.8)
