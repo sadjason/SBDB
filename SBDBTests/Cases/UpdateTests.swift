@@ -51,12 +51,12 @@ class UpdateTests: XCTestCase {
         try _createStudentTable(in: db, ifNotExists: false)
         do {
             try _createStudentTable(in: db, ifNotExists: false)
-            XCTFail() // 代码不会执行到这里
+            deadCode()
         } catch let SQLiteError.ExecuteError.stepFailed(desc, code) {
             print("create table failed: \(desc)")
             XCTAssert(code == SQLITE_ERROR)
         } catch {
-            XCTFail()
+            deadCode()
         }
         try _createStudentTable(in: db, ifNotExists: true)
     }
@@ -93,7 +93,7 @@ class UpdateTests: XCTestCase {
         let s = Util.generateStudent()
         try s.save(in: db)
         guard let f_s = try Student.fetchObject(from: db) else {
-            XCTFail()
+            deadCode()
             return
         }
         XCTAssert(f_s == s)

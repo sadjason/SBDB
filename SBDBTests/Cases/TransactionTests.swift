@@ -11,8 +11,13 @@ import XCTest
 import SQLite3
 
 /// 分析研究隐式、显式的 transaction
-/// See also: https://www.sqlite.org/lang_transaction.html
-/// TODO:
+///
+/// - See also:
+///   - https://www.sqlite.org/atomiccommit.html
+///   - https://www.sqlite.org/lang_transaction.html
+///   - https://www.sqlite.org/lockingv3.html
+///
+/// - TODO:
 ///   * Response To Errors Within A Transaction 还没理解清楚
 ///   * Busy 处理机制
 class TransactionTests: XCTestCase {
@@ -62,13 +67,9 @@ class TransactionTests: XCTestCase {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
                         try Util.generateStudent().save(in: db)
-                    } catch {
-                        XCTFail()
-                    }
+                    } catch { self.neverExecute() }
                 }
-            } catch {
-                XCTFail()
-            }
+            } catch { self.deadCode() }
         }
         
         Thread.sleep(forTimeInterval: 2.0)
@@ -100,16 +101,12 @@ class TransactionTests: XCTestCase {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
                         try Util.generateStudent().save(in: db)
-                    } catch {
-                        XCTFail()
-                    }
+                    } catch { self.noError() }
                 }
             } catch SQLiteError.TransactionError.commit(_, let code) {
                 XCTAssert(code == SQLITE_BUSY)
                 flag = true
-            } catch {
-                XCTFail()
-            }
+            } catch { self.neverExecute() }
         }
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.3) {
             XCTAssert(flag)
@@ -123,13 +120,9 @@ class TransactionTests: XCTestCase {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
                         try Util.generateStudent().save(in: db)
-                    } catch {
-                        XCTFail()
-                    }
+                    } catch { self.neverExecute() }
                 }
-            } catch {
-                XCTFail()
-            }
+            } catch { self.neverExecute() }
         }
         
         Thread.sleep(forTimeInterval: 2.0)
@@ -161,16 +154,12 @@ class TransactionTests: XCTestCase {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
                         try Util.generateStudent().save(in: db)
-                    } catch {
-                        XCTFail()
-                    }
+                    } catch { self.neverExecute() }
                 }
             } catch SQLiteError.TransactionError.commit(_, let code) {
                 flag = code == SQLITE_BUSY
                 XCTAssert(code == SQLITE_BUSY)
-            } catch {
-                XCTFail()
-            }
+            } catch { self.neverExecute() }
         }
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.3) {
             XCTAssert(flag)
@@ -184,13 +173,9 @@ class TransactionTests: XCTestCase {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
                         try Util.generateStudent().save(in: db)
-                    } catch {
-                        XCTFail()
-                    }
+                    } catch { self.neverExecute() }
                 }
-            } catch {
-                XCTFail()
-            }
+            } catch { self.neverExecute() }
         }
         
         Thread.sleep(forTimeInterval: 2.0)

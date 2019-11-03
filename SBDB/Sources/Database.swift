@@ -13,6 +13,7 @@ public class Database: Identifiable {
 
     private var cachedStatements = [String: RawStatement]()
     private lazy var statementLock = UnfairLock()
+    private var inExplicitTransaction = false
     
     var pointer: OpaquePointer! = nil
     
@@ -169,29 +170,54 @@ extension Database {
 
 extension Database {
 
-    public func beginTransaction(withMode mode: Base.TransactionMode = .deferred) throws {
+    func _beginTransaction(withMode mode: Base.TransactionMode = .deferred) throws {
         do {
             try exec(sql: "begin \(mode.sql) transaction", withParams: nil)
         } catch {
             throw SQLiteError.TransactionError.begin(lastErrorMessage, lastErrorCode)
         }
     }
-
-    public func endTransaction() throws {
-        if sqlite3_get_autocommit(pointer) == 0 {
-            do {
-                try exec(sql: "commit transaction", withParams: nil)
-            } catch {
-                throw SQLiteError.TransactionError.commit(lastErrorMessage, lastErrorCode)
-            }
+    
+    func _endTransaction() throws {
+        do {
+            try exec(sql: "commit transaction", withParams: nil)
+        } catch {
+            throw SQLiteError.TransactionError.commit(lastErrorMessage, lastErrorCode)
         }
     }
-
-    public func rollbackTransaction() throws {
+    
+    func _rollbackTransaction() throws {
         do {
             try exec(sql: "rollback transaction", withParams: nil)
         } catch {
             throw SQLiteError.TransactionError.rollback(lastErrorMessage, lastErrorCode)
+        }
+    }
+    
+    public func beginTransaction(withMode mode: Base.TransactionMode = .deferred) throws {
+        if inExplicitTransaction {
+            // 避免 transaction 嵌套
+            return
+        }
+        try _beginTransaction(withMode: mode)
+        inExplicitTransaction = true
+    }
+
+    public func endTransaction() throws {
+        if sqlite3_get_autocommit(pointer) == 0 {
+            try _endTransaction()
+            inExplicitTransaction = false
+        }
+    }
+    
+    public func commitTransaction() throws {
+        try endTransaction()
+    }
+
+    public func rollbackTransaction() throws {
+        if sqlite3_get_autocommit(pointer) == 0 {
+            try _rollbackTransaction()
+            inExplicitTransaction = false
         }
     }
 }

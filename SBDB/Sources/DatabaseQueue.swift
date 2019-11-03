@@ -61,7 +61,7 @@ final public class DatabaseQueue {
     ///
     /// - Parameter mode: transaction mode
     /// - Parameter workItem: The work item to be invoked on the queue
-    /// - See also /// https://www.sqlite.org/lang_transaction.html
+    /// - See also: https://www.sqlite.org/lang_transaction.html
     func inTransaction(
         mode: TransactionMode = .deferred,
         execute workItem: TransactionWorkItem

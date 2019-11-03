@@ -56,12 +56,10 @@ extension Base {
 
     /// https://www.sqlite.org/lang_transaction.html
     public enum TransactionMode: String, Expression {
-        /// Means that the transaction does not actually start
-        /// until the database is first accessed.
+        /// Means that the transaction does not actually start until the database is first accessed.
         case deferred
 
-        /// Cause the database connection to start a new write immediately,
-        /// without waiting for a writes statement.
+        /// Cause the database connection to start a new write immediately, without waiting for a writes statement.
         case immediate
 
         /// `exclusive` is similar to `immediate` in that a write transaction is started immediately.

@@ -10,9 +10,10 @@ import XCTest
 @testable import SBDB
 import SQLite3
 
-/// 研究分析非 WAL 模式下各个 transaction mode
+/// 研究分析非 WAL 模式下各个 transaction mode 之间互相的影响
 ///     WAL 模式下 exclusive 和 immediate 等价
-/// See also: https://www.sqlite.org/lang_transaction.html
+/// - See also:
+///   - https://www.sqlite.org/lang_transaction.html
 
 class TransactionModeTests: XCTestCase {
 
@@ -73,12 +74,9 @@ class TransactionModeTests: XCTestCase {
                 try queue.inTransaction(mode: transaction.mode, execute: { (db, _) in
                     do {
                         switch transaction.type {
-                        case .empty:
-                            break
-                        case .read:
-                            let _ = try Student.fetchObject(from: db)
-                        case .write:
-                            try Util.generateStudent().save(in: db)
+                        case .empty: break
+                        case .read: let _ = try Student.fetchObject(from: db)
+                        case .write: try Util.generateStudent().save(in: db)
                         }
                         if let s = transaction.sleep {
                             Thread.sleep(forTimeInterval: s)
@@ -92,8 +90,32 @@ class TransactionModeTests: XCTestCase {
             }
         }
     }
+    
+    // MARK: Deferred Empty 事务对其他事务的影响
+    
+    func testDeferredEmptyTransactionIsActive() {
+        let activeTransaction = Transaction(mode: .deferred, type: .read, delay: 0.0, sleep: 1.8)
+        runTransaction(activeTransaction, errorHandler: nil)
+        
+        // deferred 空事务对其他事务没有任何影响，它不会获取任何锁
+        /// - See also: https://www.sqlite.org/lockingv3.html
+        let otherTransactions = [
+            Transaction(mode: .deferred, type: .read, delay: 0.1),
+            Transaction(mode: .deferred, type: .write, delay: 0.2),
+            Transaction(mode: .immediate, type: .read, delay: 0.3),
+            Transaction(mode: .immediate, type: .write, delay: 0.4),
+            Transaction(mode: .immediate, type: .empty, delay: 0.5, sleep: 0.1),
+            Transaction(mode: .exclusive, type: .read, delay: 0.8),
+            Transaction(mode: .exclusive, type: .write, delay: 0.9),
+            Transaction(mode: .exclusive, type: .empty, delay: 1.0, sleep: 0.1)
+        ]
+        
+        otherTransactions.forEach { (transaction) in
+            runTransaction(transaction) { (_) in self.noError() }
+        }
+    }
 
-    // MARK: deferred 读事务对其他事务的影响
+    // MARK: Deferred 读事务对其他事务的影响
     
     func testDeferredReadTransactionIsActive() {
         let activeTransaction = Transaction(mode: .deferred, type: .read, delay: 0.0, sleep: 1.8)
@@ -105,21 +127,18 @@ class TransactionModeTests: XCTestCase {
             Transaction(mode: .deferred, type: .empty, delay: 0.2, sleep: 0.1),
         ]
         deferredReadTransactions.forEach { (transaction) in
-            runTransaction(transaction) { (_) in
-                XCTFail()
-            }
+            runTransaction(transaction) { (_) in self.noError() }
         }
         
         // 对 deferred 写事务有影响：commit 时报错 SQLITE_BUSY
+
         let deferredWriteTransaction = Transaction(mode: .deferred, type: .write, delay: 0.4)
         runTransaction(deferredWriteTransaction) { (error) in
             do {
                 throw error
             } catch let SQLiteError.TransactionError.commit(_, code) {
                 XCTAssert(code == SQLITE_BUSY)
-            } catch {
-                XCTFail()
-            }
+            } catch { self.neverExecute() }
         }
         
         // 对 immediate 事务有影响：commit 时报错 SQLITE_BUSY：
@@ -134,9 +153,7 @@ class TransactionModeTests: XCTestCase {
                     throw error
                 } catch let SQLiteError.TransactionError.commit(_, code) {
                     XCTAssert(code == SQLITE_BUSY)
-                } catch {
-                    XCTFail()
-                }
+                } catch { self.neverExecute() }
             }
         }
         
@@ -152,9 +169,7 @@ class TransactionModeTests: XCTestCase {
                     throw error
                 } catch let SQLiteError.TransactionError.begin(_, code) {
                     XCTAssert(code == SQLITE_BUSY)
-                } catch {
-                    XCTFail()
-                }
+                } catch { self.neverExecute() }
             }
         }
 
@@ -173,9 +188,7 @@ class TransactionModeTests: XCTestCase {
             Transaction(mode: .deferred, type: .empty, delay: 0.2, sleep: 0.1),
         ]
         deferredReadTransactions.forEach { (transaction) in
-            runTransaction(transaction) { (_) in
-                XCTFail()
-            }
+            runTransaction(transaction) { (_) in self.neverExecute() }
         }
         
         // 对 deferred 写事务有影响：执行时报错 SQLITE_BUSY
@@ -185,9 +198,7 @@ class TransactionModeTests: XCTestCase {
                 throw error
             } catch let SQLiteError.ExecuteError.stepFailed(_, code) {
                 XCTAssert(code == SQLITE_BUSY)
-            } catch {
-                XCTFail()
-            }
+            } catch { self.neverExecute() }
         }
         
         // 对 immediate 事务有影响：begin 时报错 SQLITE_BUSY：
@@ -202,9 +213,7 @@ class TransactionModeTests: XCTestCase {
                     throw error
                 } catch let SQLiteError.TransactionError.begin(_, code) {
                     XCTAssert(code == SQLITE_BUSY)
-                } catch {
-                    XCTFail()
-                }
+                } catch { self.neverExecute() }
             }
         }
         
@@ -220,9 +229,7 @@ class TransactionModeTests: XCTestCase {
                     throw error
                 } catch let SQLiteError.TransactionError.begin(_, code) {
                     XCTAssert(code == SQLITE_BUSY)
-                } catch {
-                    XCTFail()
-                }
+                } catch { self.neverExecute() }
             }
         }
 
@@ -238,9 +245,7 @@ class TransactionModeTests: XCTestCase {
             Transaction(mode: .deferred, type: .empty, delay: 0.2, sleep: 0.1),
         ]
         deferredReadTransactions.forEach { (transaction) in
-            runTransaction(transaction) { (_) in
-                XCTFail()
-            }
+            runTransaction(transaction) { (_) in self.neverExecute() }
         }
         
         // 对 deferred 写事务有影响：执行时报错 SQLITE_BUSY
@@ -250,9 +255,7 @@ class TransactionModeTests: XCTestCase {
                 throw error
             } catch let SQLiteError.ExecuteError.stepFailed(_, code) {
                 XCTAssert(code == SQLITE_BUSY)
-            } catch {
-                XCTFail()
-            }
+            } catch { self.neverExecute() }
         }
         
         // 对 immediate 事务有影响：begin 时报错 SQLITE_BUSY：
@@ -267,9 +270,7 @@ class TransactionModeTests: XCTestCase {
                     throw error
                 } catch let SQLiteError.TransactionError.begin(_, code) {
                     XCTAssert(code == SQLITE_BUSY)
-                } catch {
-                    XCTFail()
-                }
+                } catch { self.neverExecute() }
             }
         }
         
@@ -285,9 +286,7 @@ class TransactionModeTests: XCTestCase {
                     throw error
                 } catch let SQLiteError.TransactionError.begin(_, code) {
                     XCTAssert(code == SQLITE_BUSY)
-                } catch {
-                    XCTFail()
-                }
+                } catch { self.neverExecute() }
             }
         }
 
@@ -327,9 +326,7 @@ class TransactionModeTests: XCTestCase {
                     throw error
                 } catch let SQLiteError.ExecuteError.prepareStmtFailed(_, code) {
                     XCTAssert(code == SQLITE_BUSY)
-                } catch {
-                    XCTFail()
-                }
+                } catch { self.neverExecute() }
             }
         }
         
@@ -345,9 +342,7 @@ class TransactionModeTests: XCTestCase {
                     throw error
                 } catch let SQLiteError.TransactionError.begin(_, code) {
                     XCTAssert(code == SQLITE_BUSY)
-                } catch {
-                    XCTFail()
-                }
+                } catch { self.neverExecute() }
             }
         }
         

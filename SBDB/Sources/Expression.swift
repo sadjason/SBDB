@@ -35,11 +35,11 @@ protocol ParameterExpression: Expression {
 }
 
 extension ParameterExpression {
-    // replace all placeholder with parameters
-
+    
     public var debugDescription: String {
         sql.enumerated().map { (index, ch) -> String in
             let s = String(ch)
+            // replace placeholder with parameter
             if s == ParameterPlaceholder,
                 index < (params?.count ?? 0),
                 let param = params?[index] {
@@ -80,8 +80,7 @@ private let NotConditionPrefix = "not "
 extension Condition {
 
     private var hasNot: Bool {
-        let s = sql.trimmingCharacters(in: .whitespaces)
-        return s.lowercased().hasPrefix(NotConditionPrefix)
+        sql.trimmingCharacters(in: .whitespaces).lowercased().hasPrefix(NotConditionPrefix)
     }
 
     // `and` operator for Condition

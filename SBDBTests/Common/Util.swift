@@ -9,6 +9,7 @@
 import Foundation
 import UIKit
 @testable import SBDB
+import XCTest
 
 enum Util {
     public static func openDatabase(options: Database.OpenOptions? = nil) throws -> Database {
@@ -71,3 +72,14 @@ enum Util {
     }
 }
 
+extension XCTestCase {
+    func deadCode() {
+        XCTFail()
+    }
+    func noError() {
+        XCTFail()
+    }
+    func neverExecute() {
+        XCTFail()
+    }
+}
