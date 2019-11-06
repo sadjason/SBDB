@@ -13,13 +13,17 @@ import XCTest
 
 enum Util {
     public static func openDatabase(options: Database.OpenOptions? = nil) throws -> Database {
+        return try Database(path: databasePath, options: options)
+    }
+    
+    public static var databasePath: String {
         let userDir = NSSearchPathForDirectoriesInDomains(
             .documentDirectory,
             .userDomainMask,
             true
         ).first!
         let path = "\(userDir)/tests.sqlite3"
-        return try Database(path: path, options: options)
+        return path
     }
 
     public static func createDatabaseQueue(options: OpenOptions? = nil, label: String? = nil) -> DatabaseQueue {

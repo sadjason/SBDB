@@ -26,21 +26,7 @@ class TransactionTests: XCTestCase {
         // 禁用 statement 缓存
         Database.disableStatementCache = true
         
-        let db: Database! = try? Util.openDatabase()
-        
-        try? Student.create(in: db!) { (tb) in
-            tb.ifNotExists = true
-
-            tb.column("name", type: .text).notNull()
-            tb.column("age", type: .integer).notNull()
-            tb.column("address", type: .text)
-            tb.column("grade", type: .integer)
-            tb.column("married", type: .integer)
-            tb.column("isBoy", type: .integer)
-            tb.column("gpa", type: .real)
-            tb.column("extra", type: .blob)
-        }
-        try? Student.delete(in: db)
+        try? Util.createStudentTable()
     }
     
     // MARK: 隐式事务的结束时机
@@ -48,6 +34,7 @@ class TransactionTests: XCTestCase {
     /// 有些隐式事务会自动结束，不需要调用 reset 或者 finalize
     func testSomeStatementWillAutoFinishTransaction() {
         let db = try! Util.openDatabase()
+        try? Student.delete(in: db)
         try! Util.setJournalMode("delete", for: db)
         
         DispatchQueue.global().async {
@@ -177,6 +164,51 @@ class TransactionTests: XCTestCase {
                 }
             } catch { self.neverExecute() }
         }
+        
+        Thread.sleep(forTimeInterval: 2.0)
+    }
+    
+    // MARK: 
+    
+    /// 当文件锁处于 pending 状态下，读失败
+    func testObtainSharedLockInPending() throws {
+        
+        DispatchQueue.global().async {
+            Thread.sleep(forTimeInterval: 0.1)
+            let db = try! Util.openDatabase()
+            try! db.beginTransaction()
+            let _ = try! Student.fetchObjects(from: db)
+            Thread.sleep(forTimeInterval: 0.5)
+            try! db.endTransaction()
+        }
+        
+        DispatchQueue.global().async {
+            let db = try! Util.openDatabase()
+            try? db.beginTransaction()
+            try! Util.generateStudent().save(in: db)
+            
+            Thread.sleep(forTimeInterval: 0.2)
+            
+            try? db.endTransaction()
+            
+            // commit failed, 处于 pending 状态
+            
+            Thread.sleep(forTimeInterval: 1.2)
+        }
+        
+        let db = try Util.openDatabase()
+        try? db.beginTransaction()
+        Thread.sleep(forTimeInterval: 1.0)
+        do {
+            let _ = try Student.fetchObject(from: db)
+            neverExecute()
+        } catch let SQLiteError.ExecuteError.prepareStmtFailed(desc, code) {
+            print("read failed. desc: \(desc), code: \(code)")
+            XCTAssert(code == SQLITE_BUSY)
+        } catch {
+            XCTFail()
+        }
+        try? db.endTransaction()
         
         Thread.sleep(forTimeInterval: 2.0)
     }

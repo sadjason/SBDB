@@ -28,26 +28,6 @@ extension Base {
         init(storage: Storage) {
             self.storage = storage
         }
-
-        init(sqliteRawValue: SQLiteRawValue) {
-            switch sqlite3_value_type(sqliteRawValue) {
-            case SQLITE_INTEGER:
-                storage = .integer(sqlite3_value_int64(sqliteRawValue))
-            case SQLITE_FLOAT:
-                storage = .real(sqlite3_value_double(sqliteRawValue))
-            case SQLITE_TEXT:
-                storage = .text(String(cString: sqlite3_value_text(sqliteRawValue)))
-            case SQLITE_BLOB:
-                if let bytes = sqlite3_value_blob(sqliteRawValue) {
-                    let count = Int(sqlite3_value_bytes(sqliteRawValue))
-                    storage = .blob(Data(bytes: bytes, count: count))
-                } else {
-                    storage = .blob(Data())
-                }
-            default:
-                fatalError()
-            }
-        }
     }
 }
 

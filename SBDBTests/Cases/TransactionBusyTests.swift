@@ -7,28 +7,34 @@
 //
 
 import XCTest
+@testable import SBDB
 
 /// 研究 busy 相关
 class TransactionBusyTests: XCTestCase {
 
-    override func setUp() {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    }
-
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+    /// 并发访问可能会导致 Busy 错误
+    func testBusyProblem() throws {
+        
+        try! Util.createStudentTable()
+        
+        let db = try! Util.openDatabase(options: [.readwrite, .create, .fullMutex])
+        try! Student.delete(in: db)
+        
+        // 异步线程写操作
+        DispatchQueue.global().async {
+            let db = try! Util.openDatabase(options: [.readwrite, .create, .fullMutex])
+            (0..<1000).forEach { _ in try? Util.generateStudent().save(in: db) }
         }
+        
+        // 主线程读操作，干扰异步线程的写操作
+        (0..<1000).forEach { _ in _ = try? Student.fetchObject(from: db) }
+        
+        Thread.sleep(forTimeInterval: 1.0)
+        
+        
+        let savedCount = try! Student.fetchObjects(from: db).count
+        print(savedCount)
+        XCTAssert(savedCount == 1000)
     }
-
+    
 }

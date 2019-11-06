@@ -1,5 +1,5 @@
 //
-//  TransactionModeTests.swift
+//  TransactionModeRollbackTests.swift
 //  SBDBTests
 //
 //  Created by zhangwei on 2019/10/31.
@@ -10,12 +10,11 @@ import XCTest
 @testable import SBDB
 import SQLite3
 
-/// 研究分析非 WAL 模式下各个 transaction mode 之间互相的影响
-///     WAL 模式下 exclusive 和 immediate 等价
+/// 研究分析 Rollback 日志模式下各个 transaction mode 之间互相的影响
 /// - See also:
 ///   - https://www.sqlite.org/lang_transaction.html
 
-class TransactionModeTests: XCTestCase {
+class TransactionModeRollbackTests: XCTestCase {
 
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.

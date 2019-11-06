@@ -35,7 +35,11 @@ public class Database: Identifiable {
         }
         // print("database is opened successfully, path: \(path)")
     }
-
+    
+    public func close() {
+        sqlite3_close(pointer)
+    }
+    
     deinit {
         sqlite3_close(pointer)
     }
@@ -195,8 +199,7 @@ extension Database {
     }
     
     public func beginTransaction(withMode mode: Base.TransactionMode = .deferred) throws {
-        if inExplicitTransaction {
-            // 避免 transaction 嵌套
+        if inExplicitTransaction { // 避免 transaction 嵌套
             return
         }
         try _beginTransaction(withMode: mode)

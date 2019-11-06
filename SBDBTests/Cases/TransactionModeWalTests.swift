@@ -2,7 +2,7 @@
 //  TransactionModeWalTests.swift
 //  SBDBTests
 //
-//  Created by zhangwei on 2019/11/6.
+//  Created by zhangwei on 2019/11/1.
 //  Copyright © 2019 zhangwei. All rights reserved.
 //
 
@@ -26,7 +26,7 @@ class TransactionModeWalTests: XCTestCase {
     
     func prepareDatabase() throws -> Database {
         let db = try Util.openDatabase(options: [.readwrite, .create, .noMutex])
-        try Util.setJournalMode("delete", for: db)
+        try Util.setJournalMode("wal", for: db)
         return db
     }
     
@@ -61,7 +61,7 @@ class TransactionModeWalTests: XCTestCase {
         Thread.sleep(forTimeInterval: 1.0)
     }
     
-    /// DereferredRead 对 DereferredWrite 的影响：commit 时会出错
+    /// DereferredRead 对 DereferredWrite 的影响：无影响
     func testDereferredRead_DereferredWrite() throws {
         do {
             let db = try prepareDatabase()
@@ -80,9 +80,6 @@ class TransactionModeWalTests: XCTestCase {
                     try db.beginTransaction(withMode: .deferred)
                     try Util.generateStudent().save(in: db)
                     try db.endTransaction()
-                    self.neverExecute()
-                } catch SQLiteError.TransactionError.commit(_, let code) {
-                    XCTAssert(code == SQLITE_BUSY)
                 } catch {
                     XCTFail()
                 }
@@ -92,8 +89,7 @@ class TransactionModeWalTests: XCTestCase {
         Thread.sleep(forTimeInterval: 1.0)
     }
     
-    /// DereferredRead 对 Immediate 事务的影响：commit 时会出错
-    /// Immediate 事务被认为是写事务，commit 时尝试获取 exclusive 锁，即便这个 immediate 事务是空的
+    /// DereferredRead 对 Immediate 事务的影响：无影响
     func testDereferredRead_Immediate() throws {
         do {
             let db = try prepareDatabase()
@@ -110,11 +106,8 @@ class TransactionModeWalTests: XCTestCase {
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
                 do {
                     try db.beginTransaction(withMode: .immediate)
-                    // do nothing
+                    try Util.generateStudent().save(in: db)
                     try db.endTransaction()
-                    self.neverExecute()
-                } catch SQLiteError.TransactionError.commit(_, let code) {
-                    XCTAssert(code == SQLITE_BUSY)
                 } catch {
                     XCTFail()
                 }
@@ -124,7 +117,8 @@ class TransactionModeWalTests: XCTestCase {
         Thread.sleep(forTimeInterval: 1.0)
     }
     
-    /// DereferredRead 对 Exclusive 的影响：begin 时会出错
+    /// DereferredRead 对 Exclusive 的影响：无影响
+    /// WAL 模式下的 exclusive 和 immediate 一样效果
     func testDereferredRead_Exclusive() throws {
         do {
             let db = try prepareDatabase()
@@ -141,11 +135,8 @@ class TransactionModeWalTests: XCTestCase {
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
                 do {
                     try db.beginTransaction(withMode: .exclusive)
-                    // do nothing
+                    try Util.generateStudent().save(in: db)
                     try db.endTransaction()
-                    self.neverExecute()
-                } catch SQLiteError.TransactionError.begin(_, let code) {
-                    XCTAssert(code == SQLITE_BUSY)
                 } catch {
                     XCTFail()
                 }
@@ -426,9 +417,6 @@ class TransactionModeWalTests: XCTestCase {
                     try db.beginTransaction(withMode: .deferred)
                     let _ = try Student.fetchObject(from: db)
                     try db.endTransaction()
-                    self.neverExecute()
-                } catch SQLiteError.ExecuteError.stepFailed(_, let code) {
-                    XCTAssert(code == SQLITE_BUSY)
                 } catch {
                     XCTFail()
                 }
