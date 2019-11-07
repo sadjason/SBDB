@@ -15,22 +15,7 @@ class SingleDatabasePerformance: XCTestCase {
     var db: Database!
 
     override func setUp() {
-        db = try? Util.openDatabase()
-        try? Student.create(in: db) { (tb) in
-            tb.ifNotExists = true
-
-            tb.column("name", type: .text).notNull()
-            tb.column("age", type: .integer).notNull()
-            tb.column("address", type: .text)
-            tb.column("grade", type: .integer)
-            tb.column("married", type: .integer)
-            tb.column("isBoy", type: .integer)
-            tb.column("gpa", type: .real)
-            tb.column("extra", type: .blob)
-        }
-        print("setUp 1")
-
-        print("sqlite safe mode = \(sqlite3_threadsafe())")
+        try! Util.createStudentTable()
     }
 
     override func tearDown() {

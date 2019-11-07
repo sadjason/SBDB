@@ -36,10 +36,6 @@ public class Database: Identifiable {
         // print("database is opened successfully, path: \(path)")
     }
     
-    public func close() {
-        sqlite3_close(pointer)
-    }
-    
     deinit {
         sqlite3_close(pointer)
     }

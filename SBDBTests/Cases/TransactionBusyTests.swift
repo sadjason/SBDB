@@ -8,6 +8,7 @@
 
 import XCTest
 @testable import SBDB
+import SQLite3
 
 /// 研究 busy 相关
 class TransactionBusyTests: XCTestCase {
@@ -35,6 +36,17 @@ class TransactionBusyTests: XCTestCase {
         let savedCount = try! Student.fetchObjects(from: db).count
         print(savedCount)
         XCTAssert(savedCount == 1000)
+    }
+    
+    /// https://www.sqlite.org/c3ref/busy_handler.html
+    /// PRAGMA busy_timeout; 设置超时时间
+    /// https://www.sqlite.org/pragma.html#pragma_busy_timeout
+    /// https://www.sqlite.org/c3ref/busy_timeout.html
+    /// 注册超时处理
+    /// https://www.sqlite.org/c3ref/busy_handler.html
+    /// 超时函数里包括哪些东西
+    func tetest() {
+        // sqlite3_busy_handler(<#T##OpaquePointer!#>, <#T##((UnsafeMutableRawPointer?, Int32) -> Int32)!##((UnsafeMutableRawPointer?, Int32) -> Int32)!##(UnsafeMutableRawPointer?, Int32) -> Int32#>, <#T##UnsafeMutableRawPointer!#>)
     }
     
 }

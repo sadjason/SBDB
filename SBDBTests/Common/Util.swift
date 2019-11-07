@@ -57,6 +57,18 @@ enum Util {
         }
     }
     
+    public static func journalMode(of db: Database) -> String {
+        var ret: Base.RowStorage?
+        try? db.exec(sql: "pragma journal_mode", withParams: nil) { (_, row, stop) in
+            ret = row
+            stop = true
+        }
+        guard let retValue = ret?["journal_mode"]?.baseValue else {
+            return ""
+        }
+        return String(from: retValue) ?? ""
+    }
+    
     public static func setJournalMode(_ mode: String, for database: Database) throws {
         var ret: Base.RowStorage?
         try? database.exec(sql: "pragma journal_mode=\(mode);", withParams: nil) { (_, row, stop) in
