@@ -53,7 +53,7 @@ final public class DatabaseQueue {
 
         try queue.sync {
             let database = try checkDatabase()
-            workItem(database)
+            try workItem(database)
         }
     }
 
@@ -73,10 +73,10 @@ final public class DatabaseQueue {
             let database = try checkDatabase()
 
             var shouldRollback = false
-            let rollback: Rollback = { () in shouldRollback = true }
+            let rollback: Rollback = { shouldRollback = true }
 
             try database.beginTransaction(withMode: mode)
-            workItem(database, rollback)
+            try workItem(database, rollback)
             if shouldRollback {
                 try database.rollbackTransaction()
             } else {

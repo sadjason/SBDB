@@ -91,7 +91,7 @@ extension DatabasePool {
                 self?.pushReadDatabase(db)
             }
         }
-        workItem(db)
+        try workItem(db)
     }
 
     /// 以非事务的方式访问数据库

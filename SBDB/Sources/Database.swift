@@ -40,6 +40,10 @@ public class Database: Identifiable {
         sqlite3_close(pointer)
     }
     
+    func close() {
+        sqlite3_close(pointer)
+    }
+    
     private var lastErrorMessage: String {
         // `sqlite3_errmsg(nil)` return "out of memory", so do not worry about `db`
         String(cString: sqlite3_errmsg(pointer))
@@ -267,9 +271,9 @@ extension Database {
 public typealias RowIterator = Database.RowIterator
 public typealias OpenOptions = Database.OpenOptions
 
-typealias DatabaseWorkItem = (Database) -> Void
+typealias DatabaseWorkItem = (Database) throws -> Void
 
 /// About transaction
 typealias Rollback = () -> Void
-typealias TransactionWorkItem = (Database, Rollback) -> Void
+typealias TransactionWorkItem = (Database, Rollback) throws -> Void
 typealias TransactionMode = Base.TransactionMode

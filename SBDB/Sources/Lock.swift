@@ -30,13 +30,13 @@ final class UnfairLock {
         os_unfair_lock_unlock(unfairLock)
     }
 
-    func protect<T>(_ closure: () -> T) -> T {
+    func protect<T>(_ closure: () throws -> T) rethrows -> T {
         lock(); defer { unlock() }
-        return closure()
+        return try closure()
     }
 
-    func protect(_ closure: () -> Void) {
+    func protect(_ closure: () throws -> Void) rethrows {
         lock(); defer { unlock() }
-        return closure()
+        return try closure()
     }
 }
