@@ -28,7 +28,7 @@ class WAL: XCTestCase {
     }
 
     func testConfiguringWalMode() throws {
-        let db = try Util.openDatabase(options: [.readwrite, .create, .noMutex])
+        let db = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .noMutex])
         print("dataPath = \(Util.databasePath)")
         // try Util.setJournalMode("wal", for: db)
         try Util.setJournalMode("delete", for: db)
@@ -49,7 +49,7 @@ class WAL: XCTestCase {
     // 用于提高效率，磁盘空间并没有丢失，但也不向操作系统返回磁盘空间，这就导致删除数据乃至清空整个数据库后，数据文件大小还是没有任何变化，还是很大
     
     func testDeleteWalMode() throws {
-        let db = try Util.openDatabase(options: [.readwrite, .create, .noMutex])
+        let db = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .noMutex])
         print("dataPath = \(Util.databasePath)")
         try? Util.setJournalMode("delete", for: db)
         

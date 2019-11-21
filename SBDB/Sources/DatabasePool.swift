@@ -15,7 +15,7 @@ final class DatabasePool {
     private lazy var writeQueue: DatabaseQueue = _initWriteQueue()
 
     private let readOptions: OpenOptions = [.readonly, .noMutex]
-    private let writeOptions: OpenOptions = [.readwrite, .create, .noMutex]
+    private let writeOptions: OpenOptions = [.readwrite, .createIfNotExists, .noMutex]
 
     let path: String
 

@@ -25,7 +25,7 @@ class TransactionModeWalTests: XCTestCase {
     }
     
     func prepareDatabase() throws -> Database {
-        let db = try Util.openDatabase(options: [.readwrite, .create, .noMutex])
+        let db = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .noMutex])
         try Util.setJournalMode("wal", for: db)
         return db
     }

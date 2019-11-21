@@ -12,7 +12,7 @@ import SQLite3
 typealias SQLiteRawValue = OpaquePointer
 
 extension Base {
-
+    
     public struct Value {
 
         public let storage: Storage
@@ -58,3 +58,4 @@ extension BaseValue: BaseValueConvertible {
 
     public var baseValue: BaseValue { self }
 }
+

@@ -45,6 +45,10 @@ public enum SQLiteError: Error {
         case stepStementFailed
         case bindParameterFailed
     }
+    
+    enum ColumnConvertError: Error {
+        case cannotConvertFromNull
+    }
 }
 
 func lastErrorMessage(of dabasePointer: OpaquePointer) -> String {

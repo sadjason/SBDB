@@ -51,7 +51,7 @@ public enum Table {
         }
 
         @discardableResult
-        public func column(_ name: String, type: ColumnDefinition.DataType?) -> ColumnDefinition {
+        public func column(_ name: String, type: ColumnDefinition.DataType = .blob) -> ColumnDefinition {
             let column = ColumnDefinition(name, type)
             columns.append(column)
             return column
@@ -114,5 +114,21 @@ public extension CustomTableNameConvertible {
     static func drop(from database: Database) throws {
         let drop = TableDropStatement(name: self.tableName)
         try database.exec(sql: drop.sql, withParams: drop.params)
+    }
+}
+
+
+public extension TableDecodable {
+    static func create(in database: Database, ifNotExists: Bool = true) throws {
+        let columnStructures = try TableColumnDecoder.default.decode(Self.self)
+        let definition = Table.Definition(name: tableName)
+        definition.ifNotExists = true
+        for structure in columnStructures.values {
+            let col = definition.column(structure.name, type: structure.type)
+            if structure.nonnull {
+                col.notNull()
+            }
+        }
+        try database.exec(sql: definition.sql, withParams: definition.params)
     }
 }

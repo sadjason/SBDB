@@ -16,19 +16,7 @@ class UpdateTests: XCTestCase {
     // MARK: Creating & Droping Table
     
     func _createStudentTable(in db: Database, ifNotExists: Bool = true) throws {
-        try Student.create(in: db) { (tb) in
-            tb.ifNotExists = ifNotExists
-
-            tb.column("id", type: .integer).primaryKey()
-            tb.column("name", type: .text).notNull()
-            tb.column("age", type: .integer).notNull()
-            tb.column("address", type: .text)
-            tb.column("grade", type: .integer)
-            tb.column("married", type: .integer)
-            tb.column("isBoy", type: .integer)
-            tb.column("gpa", type: .real)
-            tb.column("extra", type: .blob)
-        }
+        try Student.create(in: db, ifNotExists: ifNotExists)
     }
     
     func _deleteStudentTable(from db: Database) throws {
@@ -37,6 +25,7 @@ class UpdateTests: XCTestCase {
     
     /// 首次创建 table
     func testCreateTableAtFirstTime() throws {
+        print("dataPath: \(Util.databasePath)")
         let db = try Util.openDatabase()
         try _deleteStudentTable(from: db)
         

@@ -30,7 +30,7 @@ class SingleThread: XCTestCase {
 //        } else {
 //            print("set single-thread failed: \(ret)")
 //        }
-//        database = try? Util.openDatabase(options: [.create, .readwrite, .noMutex])
+//        database = try? Util.openDatabase(options: [.createIfNotExists, .readwrite, .noMutex])
     }
 
     override func tearDown() {

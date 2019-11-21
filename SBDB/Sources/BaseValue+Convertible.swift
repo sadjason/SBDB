@@ -10,8 +10,10 @@ import Foundation
 
 // TODO: 使用 gyb 改善，https://nshipster.com/swift-gyb/
 
-extension Int8: BaseValueConvertible {
-
+extension Int8: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .integer }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .integer(Int64(self)))
     }
@@ -26,8 +28,10 @@ extension Int8: BaseValueConvertible {
     }
 }
 
-extension Int16: BaseValueConvertible {
-
+extension Int16: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .integer }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .integer(Int64(self)))
     }
@@ -42,8 +46,10 @@ extension Int16: BaseValueConvertible {
     }
 }
 
-extension Int32: BaseValueConvertible {
-
+extension Int32: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .integer }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .integer(Int64(self)))
     }
@@ -58,8 +64,10 @@ extension Int32: BaseValueConvertible {
     }
 }
 
-extension Int: BaseValueConvertible {
-
+extension Int: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .integer }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .integer(Int64(self)))
     }
@@ -74,8 +82,10 @@ extension Int: BaseValueConvertible {
     }
 }
 
-extension Int64: BaseValueConvertible {
-
+extension Int64: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .integer }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .integer(self))
     }
@@ -90,8 +100,10 @@ extension Int64: BaseValueConvertible {
     }
 }
 
-extension UInt8: BaseValueConvertible {
-
+extension UInt8: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .integer }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .integer(Int64(self)))
     }
@@ -106,8 +118,10 @@ extension UInt8: BaseValueConvertible {
     }
 }
 
-extension UInt16: BaseValueConvertible {
-
+extension UInt16: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .integer }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .integer(Int64(self)))
     }
@@ -122,8 +136,10 @@ extension UInt16: BaseValueConvertible {
     }
 }
 
-extension UInt32: BaseValueConvertible {
-
+extension UInt32: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .integer }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .integer(Int64(self)))
     }
@@ -138,8 +154,10 @@ extension UInt32: BaseValueConvertible {
     }
 }
 
-extension UInt: BaseValueConvertible {
-
+extension UInt: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .integer }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .integer(Int64(self)))
     }
@@ -154,8 +172,10 @@ extension UInt: BaseValueConvertible {
     }
 }
 
-extension UInt64: BaseValueConvertible {
-
+extension UInt64: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .integer }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .integer(Int64(self)))
     }
@@ -170,8 +190,10 @@ extension UInt64: BaseValueConvertible {
     }
 }
 
-extension Bool: BaseValueConvertible {
-
+extension Bool: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .integer }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .integer(self ? 1 : 0))
     }
@@ -186,8 +208,10 @@ extension Bool: BaseValueConvertible {
     }
 }
 
-extension Float: BaseValueConvertible {
-
+extension Float: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .real }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .real(Double(self)))
     }
@@ -202,8 +226,10 @@ extension Float: BaseValueConvertible {
     }
 }
 
-extension Double: BaseValueConvertible {
-
+extension Double: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .real }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .real(self))
     }
@@ -218,8 +244,10 @@ extension Double: BaseValueConvertible {
     }
 }
 
-extension String: BaseValueConvertible {
-
+extension String: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .text }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .text(self))
     }
@@ -234,8 +262,10 @@ extension String: BaseValueConvertible {
     }
 }
 
-extension Data: BaseValueConvertible {
-
+extension Data: ColumnConvertiable {
+    
+    static var columnType: Base.AffinityType { .blob }
+    
     public var baseValue: BaseValue {
         BaseValue(storage: .blob(self))
     }
@@ -252,7 +282,10 @@ extension Data: BaseValueConvertible {
 
 extension Base {
     
-    struct Null: BaseValueConvertible {
+    struct Null: ColumnConvertiable {
+        
+        static var columnType: Base.AffinityType { .blob }
+        
         var baseValue: BaseValue {
             BaseValue(storage: .null)
         }

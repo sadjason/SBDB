@@ -26,7 +26,7 @@ class TransactionModeRollbackTests: XCTestCase {
     }
     
     func prepareDatabase() throws -> Database {
-        let db = try Util.openDatabase(options: [.readwrite, .create, .noMutex])
+        let db = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .noMutex])
         try Util.setJournalMode("delete", for: db)
         return db
     }

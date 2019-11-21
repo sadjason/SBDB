@@ -151,10 +151,10 @@ public final class ColumnDefinition {
 
     fileprivate var constraints = [ConstraintType : Constraint]()
     fileprivate let name: String
-    fileprivate let type: DataType?
+    fileprivate let type: DataType
 
     // TODO: 对于默认值，是写在定义式里，还是在构造器中，哪个更合适？
-    init(_ name: String, _ type: DataType? = nil) {
+    init(_ name: String, _ type: DataType) {
         self.name = name
         self.type = type
     }
@@ -166,7 +166,7 @@ public final class ColumnDefinition {
         order: Base.Order? = nil) -> Self
     {
         if autoIncrement {
-            guard let t = type, t == .integer else {
+            guard type == .integer else {
                 assert(false, "AUTOINCREMENT is only allowed on an INTEGER PRIMARY KEY without DESC")
                 return self
             }
@@ -239,10 +239,7 @@ extension ColumnDefinition.Constraint: Expression {
 
 extension ColumnDefinition : Expression {
     var sql: String {
-        var ret = name
-        if let type = type {
-            ret += " \(type.rawValue)"
-        }
+        var ret = "\(name) \(type.rawValue)"
         
         constraints.keys.sorted().forEach { key in
             if case .unique = key, constraints.keys.contains(.primary) {
@@ -254,3 +251,44 @@ extension ColumnDefinition : Expression {
     }
 }
 
+protocol ColumnConvertiable: BaseValueConvertible {
+    static var columnType: Base.AffinityType { get }
+    init(withNull: Base.Null) throws
+}
+
+extension ColumnConvertiable {
+    init(withNull: Base.Null) throws {
+        switch Self.columnType {
+        case .integer:
+            guard let ret = Self.init(from: BaseValue(storage: .integer(0))) else {
+                throw SQLiteError.ColumnConvertError.cannotConvertFromNull
+            }
+            self = ret
+        case .real:
+            guard let ret = Self.init(from: BaseValue(storage: .real(0.0))) else {
+                throw SQLiteError.ColumnConvertError.cannotConvertFromNull
+            }
+            self = ret
+        case .numeric:
+            if let ret = Self.init(from: BaseValue(storage: .real(0.0))) {
+                self = ret
+                return
+            }
+            if let ret = Self.init(from: BaseValue(storage: .integer(0))) {
+                self = ret
+                return
+            }
+            throw SQLiteError.ColumnConvertError.cannotConvertFromNull
+        case .text:
+            guard let ret = Self.init(from: BaseValue(storage: .text(""))) else {
+                throw SQLiteError.ColumnConvertError.cannotConvertFromNull
+            }
+            self = ret
+        case .blob:
+            guard let ret = Self.init(from: BaseValue(storage: .blob(Data()))) else {
+                throw SQLiteError.ColumnConvertError.cannotConvertFromNull
+            }
+            self = ret
+        }
+    }
+}

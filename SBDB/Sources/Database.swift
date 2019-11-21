@@ -247,7 +247,7 @@ extension Database {
         ///
         /// If the `create` option is set, the database is created if it does not already exist.
         static let readwrite = OpenOptions(rawValue: SQLITE_OPEN_READWRITE)
-        static let create = OpenOptions(rawValue: SQLITE_OPEN_CREATE)
+        static let createIfNotExists = OpenOptions(rawValue: SQLITE_OPEN_CREATE)
 
         /// If the `noMutex` option is set, then the database connection opens
         /// in the multi-thread threading mode as long as the single-thread mode

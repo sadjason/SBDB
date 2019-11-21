@@ -22,14 +22,14 @@ class SerializedTests: XCTestCase {
 
     /// jounalMode = rollback/delete, threadSafeMode = serialized
     func prepareSerializedDatabase() throws -> Database {
-        let db = try Util.openDatabase(options: [.readwrite, .create, .fullMutex])
+        let db = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .fullMutex])
         try Util.setJournalMode("delete", for: db)
         return db
     }
     
     /// jounalMode = rollback/delete, threadSafeMode = multi-thread
     func prepareMultiThreadDatabase() throws -> Database {
-        let db = try Util.openDatabase(options: [.readwrite, .create, .noMutex])
+        let db = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .noMutex])
         try Util.setJournalMode("delete", for: db)
         return db
     }

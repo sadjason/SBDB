@@ -33,20 +33,8 @@ struct Student: TableCodable {
     var extra: Data?
 }
 
-// create table
-Student.create(in: db) { (tb) in
-    tb.ifNotExists = true
-
-    tb.column("id", type: .integer).primaryKey()
-    tb.column("name", type: .text).notNull()
-    tb.column("age", type: .integer).notNull()
-    tb.column("address", type: .text)
-    tb.column("grade", type: .integer)
-    tb.column("married", type: .integer)
-    tb.column("isBoy", type: .integer)
-    tb.column("gpa", type: .real)
-    tb.column("extra", type: .blob)
-}
+// create table (ifNotExists)
+try Student.create(in: db)
 
 // drop table
 try Student.drop(from: db)
@@ -61,11 +49,7 @@ let singleStudent: Student = generateStudent()
 try singleStudent.save(in: db)
 
 // 批量插入
-let students = (0..<100).map { (index) -> Student in
-    var s = Util.generateStudent()
-    s.age = UInt8(index + 1)
-    return s
-}
+let students = (0..<100).map { generateStudent() }
 try Student.save(students, in: db)
 ```
 
@@ -91,7 +75,7 @@ Student.update(in: db, where: Column("name") == "the one") { (assignment) in
 
 ### DatabaseQueue
 
-类似于 FMDB 的 FMDatabaseQueue，DatabaseQueue 对 Database 进行封装，确保对数据库操作的串行化。
+类似于 FMDB 的 `FMDatabaseQueue`，`DatabaseQueue` 对 `Database` 进行封装，确保对数据库操作的串行化。
 
 ```swift
 let queue = DatabaseQueue(path: path)

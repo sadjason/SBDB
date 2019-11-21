@@ -68,7 +68,7 @@ class MultiThread: XCTestCase {
     // Multi-Thread 模式下多线程访问一个 connection，会 crash:
     //   > [logging] BUG IN CLIENT OF libsqlite3.dylib: illegal multi-threaded access to database connection
     func testConcurrentInsertingInMultiThreadMode() throws {
-        let db: Database = try Util.openDatabase(options: [.readwrite, .create, .noMutex])
+        let db: Database = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .noMutex])
         try createTableIfNeeded(in: db)
         try Student.delete(in: db)
         try insertStudentsConcurrently(in: db)
@@ -77,7 +77,7 @@ class MultiThread: XCTestCase {
 
     // Serialized 模式下多线程访问一个 connection，没毛病
     func testConcurrentInsertingInSerializedMode() throws {
-        let db: Database = try Util.openDatabase(options: [.readwrite, .create, .fullMutex])
+        let db: Database = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .fullMutex])
         try createTableIfNeeded(in: db)
         try Student.delete(in: db)
         try insertStudentsConcurrently(in: db)
@@ -87,7 +87,7 @@ class MultiThread: XCTestCase {
     // 测试结果证明，单线程下，multi-thread 和 serialized 性能差不多，甚至 serialized 还要稍微好一些
 
     func testInsertingPerformanceInMultiThreadMode() throws {
-        let db: Database = try Util.openDatabase(options: [.readwrite, .create, .noMutex])
+        let db: Database = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .noMutex])
         try createTableIfNeeded(in: db)
         try Student.delete(in: db)
         measure {
@@ -96,7 +96,7 @@ class MultiThread: XCTestCase {
     }
 
     func testInsertingPerformanceInSerializedMode() throws {
-        let db: Database = try Util.openDatabase(options: [.readwrite, .create, .fullMutex])
+        let db: Database = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .fullMutex])
         try createTableIfNeeded(in: db)
         try Student.delete(in: db)
         measure {
