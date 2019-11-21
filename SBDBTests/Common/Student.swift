@@ -20,6 +20,22 @@ struct Student: TableCodable, Equatable {
     var extra: Data?
 }
 
+extension Student: KeyPathToColumnNameConvertiable {
+    static func columnName(of keyPath: PartialKeyPath<Student>) -> String? {
+        switch keyPath {
+        case \Student.name: return "name"
+        case \Student.age: return "age"
+        case \Student.address: return "address"
+        case \Student.grade: return "grade"
+        case \Student.married: return "married"
+        case \Student.isBoy: return "isBoy"
+        case \Student.gpa: return "gpa"
+        case \Student.extra: return "extra"
+        default: return nil
+        }
+    }
+}
+
 private func randomFirstName() -> String {
     let strs =
     ["赵", "钱", "孙", "李", "周", "吴", "郑", "王",

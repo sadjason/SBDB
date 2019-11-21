@@ -71,6 +71,8 @@ extension SingleParameterExpression {
 public struct Condition: ParameterExpression {
     var sql: String
     var params: [BaseValueConvertible]?
+    
+    static var `true`: Condition = Condition(sql: "true", params: nil)
 }
 
 // MARK: Condition Operators

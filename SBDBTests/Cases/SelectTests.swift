@@ -39,11 +39,11 @@ class SelectTests: XCTestCase {
         }
         try students.forEach { try $0.save(in: database) }
 
-        let result1 = try Student.fetchObjects(from: database, where: Column("age") > 50)
+        let result1 = try Student.fetchObjects(from: database, where: \Student.age > 50)
         XCTAssert(result1.count == 50)
         result1.forEach { XCTAssert($0.age > 50) }
 
-        let result2 = try Student.fetchObjects(from: database, where: Column("age") > 50 && Column("isBoy") == 1 )
+        let result2 = try Student.fetchObjects(from: database, where: \Student.age > 50 && \Student.isBoy == 1 )
         XCTAssert(result2.count == 25)
         result2.forEach { XCTAssert($0.age > 50 && $0.isBoy!) }
     }

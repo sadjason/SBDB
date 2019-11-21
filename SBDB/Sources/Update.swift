@@ -75,13 +75,27 @@ extension TableEncodable {
         try db.exec(sql: stmt.sql, withParams: stmt.params)
     }
     
+}
+
+public typealias AssignHandler<Root> = (PartialKeyPath<Root>, BaseValueConvertible) -> Void
+
+extension TableEncodable where Self: KeyPathToColumnNameConvertiable  {
+    
     static func update(
         in db: Database,
         where condition: Condition,
-        assign: (inout UpdateAssignment) -> Void
+        assign: (AssignHandler<Self>) -> Void
     ) throws {
         var assignment = UpdateAssignment()
-        assign(&assignment)
+        
+        let handler: AssignHandler<Self> = { (k, v) in
+            guard let key = k.hashString() else {
+                return
+            }
+            assignment[key] = v
+        }
+        assign(handler)
+        
         try update(in: db, assignment: assignment, withMode: .update, where: condition)
     }
 }

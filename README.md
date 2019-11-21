@@ -63,13 +63,48 @@ try Student.delete(in: db)
 try Student.delete(in: db, where: Column("age") < 18)
 ```
 
+如果 `Student` 实现了 `KeyPathToColumnNameConvertiable` 协议，还可以基于 KeyPath 实现更高级的操作：
+
+```swift
+extension Student: KeyPathToColumnNameConvertiable {
+    static func columnName(of keyPath: PartialKeyPath<Student>) -> String? {
+        switch keyPath {
+        case \Student.name: return "name"
+        case \Student.age: return "age"
+        case \Student.address: return "address"
+        case \Student.grade: return "grade"
+        case \Student.married: return "married"
+        case \Student.isBoy: return "isBoy"
+        case \Student.gpa: return "gpa"
+        case \Student.extra: return "extra"
+        default: return nil
+        }
+    }
+}
+```
+
+```swift
+// 条件删
+try Student.delete(in: db, where: \Student.name < 18)
+```
+
 ### Updating
 
 ```swift
-Student.update(in: db, where: Column("name") == "the one") { (assignment) in
-    assignment["married"] = false
-    assignment["extra"] = Base.null
-    assignment["gpa"] = 4.0
+var assignment = UpdateAssignment()
+assignment["married"] = false
+assignment["extra"] = Base.null
+assignment["gpa"] = 4.0
+
+Student.update(in: db, assignment: assignment, where: Column("name") == "the one")
+```
+
+```swift
+// 或者基于 KeyPath（前提是 Student 实现了 `KeyPathToColumnNameConvertiable` 协议：
+try Student.update(in: db, where: \Student.name == "the one") { assign in
+    assign(\Student.married, false)
+    assign(\Student.extra, Base.null)
+    assign(\Student.gpa, 4.0)
 }
 ```
 

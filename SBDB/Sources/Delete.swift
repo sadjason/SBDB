@@ -44,5 +44,4 @@ extension TableEncodable {
         let deleteStmt = DeleteStatement(tableName: Self.tableName, where: condition)
         try database.exec(sql: deleteStmt.sql, withParams: deleteStmt.params)
     }
-
 }

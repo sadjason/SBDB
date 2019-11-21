@@ -292,3 +292,7 @@ extension ColumnConvertiable {
         }
     }
 }
+
+protocol KeyPathToColumnNameConvertiable {
+    static func columnName(of keyPath: PartialKeyPath<Self>) -> String?
+}

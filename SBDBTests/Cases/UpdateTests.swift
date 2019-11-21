@@ -99,8 +99,7 @@ class UpdateTests: XCTestCase {
         }
         try Student.save(students, in: db)
         
-        let orderTerm = Base.OrderTerm(columnName: "age", strategy: .asc)
-        let f_students = try Student.fetchObjects(from: db, orderBy: [orderTerm])
+        let f_students = try Student.fetchObjects(from: db, orderBy: \Student.age)
         XCTAssert(f_students.count == students.count)
         (0..<students.count).forEach { (index) in
             XCTAssert(f_students[index] == students[index])
@@ -132,12 +131,12 @@ class UpdateTests: XCTestCase {
             try Student.save([s1, s2], in: db)
             
             XCTAssert(try Student.fetchObjects(from: db).count == 2)
-            try Student.delete(in: db, where: Column("name") == "s1")
+            try Student.delete(in: db, where: \Student.name == "s1")
             let f_s = try Student.fetchObjects(from: db)
             XCTAssert(f_s.count == 1 && f_s.first! == s2)
             
             // 无效删除也是 ok 的
-            try Student.delete(in: db, where: Column("name") == "s1")
+            try Student.delete(in: db, where: \Student.name == "s1")
         }
     }
     
@@ -168,10 +167,10 @@ class UpdateTests: XCTestCase {
         
         try Student.save(students, in: db)
         
-        try Student.update(in: db, where: Column("name") == specialOne.name) { (assignment) in
-            assignment["married"] = !specialOne.married
-            assignment["extra"] = Base.null
-            assignment["gpa"] = specialOne.gpa + 0.1
+        try Student.update(in: db, where: \Student.name == specialOne.name) { assign in
+            assign(\Student.married, !specialOne.married)
+            assign(\Student.extra, Base.null)
+            assign(\Student.gpa, specialOne.gpa + 0.1)
         }
         
         let orderTerm = Base.OrderTerm(columnName: "age", strategy: .asc)

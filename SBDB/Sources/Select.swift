@@ -178,3 +178,48 @@ extension TableDecodable {
 
     // To be continue...
 }
+
+extension TableDecodable where Self: KeyPathToColumnNameConvertiable {
+    
+    static func fetchObjects(from database: Database, orderBy keyPaths: PartialKeyPath<Self>...)throws -> [Self] {
+        let orderTerms = keyPaths
+            .map { self.columnName(of: $0) }
+            .filter { $0 != nil }
+            .map { Base.OrderTerm(columnName: $0!) }
+        return try _fetchObjects(from: database, orderBy: orderTerms)
+    }
+
+    static func fetchObjects(
+        from database: Database,
+        where condition: Condition,
+        orderBy keyPaths: PartialKeyPath<Self>...
+    ) throws -> [Self]
+    {
+        let orderTerms = keyPaths
+            .map { self.columnName(of: $0) }
+            .filter { $0 != nil }
+            .map { Base.OrderTerm(columnName: $0!) }
+        return try _fetchObjects(from: database, where: condition, orderBy: orderTerms)
+    }
+
+    // MARK: Query One Object
+
+    static func fetchObject(
+        from database: Database,
+        on columns: [ResultColumn] = [ResultColumn.all],
+        where condition: Condition? = nil,
+        orderBy keyPaths: PartialKeyPath<Self>...) throws -> Self?
+    {
+        let orderTerms = keyPaths
+            .map { self.columnName(of: $0) }
+            .filter { $0 != nil }
+            .map { Base.OrderTerm(columnName: $0!) }
+        return try _fetchObjects(from: database,
+                                 on: columns,
+                                 where: condition,
+                                 orderBy: orderTerms,
+                                 limit: 1,
+                                 offset: nil).first
+    }
+
+}
