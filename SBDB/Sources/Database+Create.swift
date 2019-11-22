@@ -15,7 +15,7 @@ public struct TableCreation<T: TableDecodable> {
     private let type: T.Type
     fileprivate var stmt: CreateTableStatement
     
-    init(type: T.Type, options: Table.CreateOptions) throws {
+    init(type: T.Type, options: CreateTableOptions) throws {
         self.type = type
         stmt = CreateTableStatement(name: type.tableName)
         stmt.ifNotExists = options.contains(.ifNotExists)
@@ -29,34 +29,38 @@ public struct TableCreation<T: TableDecodable> {
     }
 }
 
-extension TableCreation where T: KeyPathToColumnNameConvertiable {
+extension TableCreation {
+    public mutating func setPrimaryKey(withColumns columns: [IndexedColumn], onConflict: Base.Conflict?) {
+        stmt.setPrimaryKey(withColumns: columns, onConflict: onConflict)
+    }
+    
+    public mutating func setUnique(withColumns columns: [IndexedColumn], onConflict: Base.Conflict?) {
+        stmt.setUnique(withColumns: columns, onConflict: onConflict)
+    }
+}
+
+extension TableCreation where T: TableCodingKeyConvertiable {
     
     public mutating func setPrimaryKey(_ keyPaths: PartialKeyPath<T>...) {
-        let indexedColumns = keyPaths
-            .map { T.columnName(of: $0) }
-            .filter { $0 != nil }
-            .map { Table.IndexedColumn($0!) }
+        let indexedColumns = keyPaths.map { IndexedColumn($0.stringValue) }
         
         guard indexedColumns.count == keyPaths.count else {
             assert(false, "some error happend")
             return
         }
         
-        stmt.setPrimaryKey(indexedColumns, onConflict: nil)
+        stmt.setPrimaryKey(withColumns: indexedColumns, onConflict: nil)
     }
     
     public mutating func setUnique(_ keyPaths: PartialKeyPath<T>...) {
-        let indexedColumns = keyPaths
-            .map { T.columnName(of: $0) }
-            .filter { $0 != nil }
-            .map { Table.IndexedColumn($0!) }
+        let indexedColumns = keyPaths.map { IndexedColumn($0.stringValue) }
         
         guard indexedColumns.count == keyPaths.count else {
             assert(false, "some error happend")
             return
         }
         
-        stmt.setUnique(indexedColumns, onConflict: nil)
+        stmt.setUnique(withColumns: indexedColumns, onConflict: nil)
     }
 }
 
@@ -64,19 +68,13 @@ extension Database {
     
     public func createTable<T: TableDecodable>(
         _ tableType: T.Type,
-        options: Table.CreateOptions = [],
+        options: CreateTableOptions = [],
         closure: ((inout TableCreation<T>) -> Void)? = nil
     ) throws
     {
         var creation = try TableCreation(type: tableType.self, options: options)
         closure?(&creation)
         try creation.stmt.exec(in: self)
-    }
-    
-    public func createTable(_ tableName: String, closure: (inout CreateTableStatement) -> Void) throws {
-        var statement = CreateTableStatement(name: tableName)
-        closure(&statement)
-        try statement.exec(in: self)
     }
     
 }
@@ -86,11 +84,11 @@ extension Database {
 extension Database {
     
     public func dropTable<T: CustomTableNameConvertible>(_ tableType: T.Type) throws {
-        try DropTableStatement(name: tableType.tableName).exec(in: self)
+        try DropTableStatement(tableType.tableName).exec(in: self)
     }
     
     public func dropTable(_ tableName: String) throws {
-        try DropTableStatement(name: tableName).exec(in: self)
+        try DropTableStatement(tableName).exec(in: self)
     }
 }
 
@@ -101,33 +99,31 @@ extension Database {
     public func createIndex(
         _ name: String,
         on table: String,
-        columns: [Table.IndexedColumn],
-        options: Table.CreateIndexOptions = [.ifNotExists, .unique]
+        columns: [IndexedColumn],
+        options: CreateIndexOptions = [.ifNotExists, .unique]
     ) throws
     {
-        var stmt = CreateTableIndexStatement(name: name, table: table, options: options)
+        var stmt = CreateIndexStatement(name: name, table: table, options: options)
         stmt.columns = columns
         try exec(sql: stmt.sql, withParams: stmt.params)
     }
     
     public func dropIndex(_ name: String) throws {
-        try DropTableIndexStatement(name: name).exec(in: self)
+        try DropIndexStatement(name: name).exec(in: self)
     }
 }
 
 extension Database {
     
-    public func createIndex<T: CustomTableNameConvertible & KeyPathToColumnNameConvertiable>(
+    public func createIndex<T: CustomTableNameConvertible & TableCodingKeyConvertiable>(
         _ name: String,
         on table: T.Type,
         keyPaths: [PartialKeyPath<T>],
-        options: Table.CreateIndexOptions = [.ifNotExists, .unique]
+        options: CreateIndexOptions = [.ifNotExists, .unique]
     ) throws {
-        var stmt = CreateTableIndexStatement(name: name, table: table.tableName, options: options)
+        var stmt = CreateIndexStatement(name: name, table: table.tableName, options: options)
         
-        let columns = keyPaths.map { table.columnName(of: $0) ?? "" }
-            .filter { $0.count > 0 }
-            .map { Table.IndexedColumn($0) }
+        let columns = keyPaths.map { IndexedColumn($0.stringValue) }
         guard columns.count == keyPaths.count else {
             throw SQLiteError.misuse("can not map string from keyPath")
         }

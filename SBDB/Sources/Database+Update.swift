@@ -14,14 +14,12 @@ extension Database {
     
     func insert<T: TableEncodable>(_ objects: Array<T>, withMode mode: InsertMode) throws {
         
-        guard objects.count > 0 else {
-            return
-        }
-
         let encoder = TableEncoder.default
-        let rows = try objects.map { try encoder.encode($0) }
-        let stmt = InsertStatement(tableName: T.tableName, rows: rows, mode: mode)
-        try stmt.exec(in: self)
+        for object in objects {
+            let row = try encoder.encode(object)
+            let stmt = InsertStatement(table: T.tableName, row: row, mode: mode)
+            try stmt.exec(in: self)
+        }
     }
     
     func insert<T: TableEncodable>(_ objects: T...) throws {
@@ -54,14 +52,14 @@ extension Database {
         where condition: Condition?
     ) throws
     {
-        try UpdateStatement(tableName: tableName,
+        try UpdateStatement(table: tableName,
                             assigment: assignment,
                             mode: mode,
                             where: condition)
             .exec(in: self)
     }
     
-    public func update<T: TableEncodable & KeyPathToColumnNameConvertiable>(
+    public func update<T: TableEncodable & TableCodingKeyConvertiable>(
         table tableType: T.Type,
         withMode mode: UpdateMode,
         where condition: Condition? = nil,
@@ -70,18 +68,13 @@ extension Database {
     {
         var assignment = UpdateAssignment()
         
-        let handler: AssignHandler<T> = { (k, v) in
-            guard let key = k.hashString() else {
-                return
-            }
-            assignment[key] = v
-        }
+        let handler: AssignHandler<T> = { assignment[$0.stringValue] = $1}
         assign(handler)
         
         try update(table: tableType.tableName, withMode: mode, assignment: assignment, where: condition)
     }
     
-    public func update<T: TableEncodable & KeyPathToColumnNameConvertiable>(
+    public func update<T: TableEncodable & TableCodingKeyConvertiable>(
         _ tableType: T.Type,
         where condition: Condition? = nil,
         assign: (AssignHandler<T>) -> Void
@@ -96,12 +89,10 @@ extension Database {
 extension Database {
     
     func delete(from tableName: String, where condition: Condition? = nil) throws {
-        try DeleteStatement(tableName: tableName, where: condition).exec(in: self)
+        try DeleteStatement(table: tableName, where: condition).exec(in: self)
     }
     
     func delete(from table: CustomTableNameConvertible.Type, where condition: Condition? = nil) throws {
-        try DeleteStatement(tableName: table.tableName, where: condition).exec(in: self)
+        try DeleteStatement(table: table.tableName, where: condition).exec(in: self)
     }
 }
-
-// MARK: 

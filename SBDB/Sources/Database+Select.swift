@@ -12,7 +12,7 @@ extension Database {
     
     private func _select<T: TableDecodable>(
         _ type: T.Type,
-        on columns: [ResultColumn],
+        on columns: [SelectColumn],
         where condition: Condition?,
         orderBy orderTerms: [Base.OrderTerm]?,
         limit: Int?,
@@ -86,26 +86,22 @@ extension Database {
         try _select(tableType, on: [.all], where: condition, orderBy: orderTerms, limit: nil, offset: nil)
     }
     
-    public func select<T: TableDecodable & KeyPathToColumnNameConvertiable>(
+    public func select<T: TableDecodable & TableCodingKeyConvertiable>(
         from tableType: T.Type,
         orderBy keyPaths: PartialKeyPath<T>...
     ) throws -> [T]
     {
-        let orderTerms = keyPaths.map { tableType.columnName(of: $0) ?? "" }
-            .filter { $0.count > 0 }
-            .map { Base.OrderTerm(columnName: $0) }
+        let orderTerms = keyPaths.map { Base.OrderTerm(column: $0.stringValue) }
         return try _select(tableType, on: [.all], where: nil, orderBy: orderTerms, limit: nil, offset: nil)
     }
     
-    public func select<T: TableDecodable & KeyPathToColumnNameConvertiable>(
+    public func select<T: TableDecodable & TableCodingKeyConvertiable>(
         from tableType: T.Type,
         where condition: Condition,
         orderBy keyPaths: PartialKeyPath<T>...
     ) throws -> [T]
     {
-        let orderTerms = keyPaths.map { tableType.columnName(of: $0) ?? "" }
-            .filter { $0.count > 0 }
-            .map { Base.OrderTerm(columnName: $0) }
+        let orderTerms = keyPaths.map { Base.OrderTerm(column: $0.stringValue) }
         return try _select(tableType, on: [.all], where: condition, orderBy: orderTerms, limit: nil, offset: nil)
     }
 }
@@ -143,26 +139,22 @@ extension Database {
         try _select(tableType, on: [.all], where: condition, orderBy: orderTerms, limit: 1, offset: nil).first
     }
     
-    public func selectOne<T: TableDecodable & KeyPathToColumnNameConvertiable>(
+    public func selectOne<T: TableDecodable & TableCodingKeyConvertiable>(
         from tableType: T.Type,
         orderBy keyPaths: PartialKeyPath<T>...
     ) throws -> T?
     {
-        let orderTerms = keyPaths.map { tableType.columnName(of: $0) ?? "" }
-            .filter { $0.count > 0 }
-            .map { Base.OrderTerm(columnName: $0) }
+        let orderTerms = keyPaths.map { Base.OrderTerm(column: $0.stringValue) }
         return try _select(tableType, on: [.all], where: nil, orderBy: orderTerms, limit: 1, offset: nil).first
     }
     
-    public func selectOne<T: TableDecodable & KeyPathToColumnNameConvertiable>(
+    public func selectOne<T: TableDecodable & TableCodingKeyConvertiable>(
         from tableType: T.Type,
         where condition: Condition,
         orderBy keyPaths: PartialKeyPath<T>...
     ) throws -> T?
     {
-        let orderTerms = keyPaths.map { tableType.columnName(of: $0) ?? "" }
-            .filter { $0.count > 0 }
-            .map { Base.OrderTerm(columnName: $0) }
+        let orderTerms = keyPaths.map { Base.OrderTerm(column: $0.stringValue) }
         return try _select(tableType, on: [.all], where: condition, orderBy: orderTerms, limit: 1, offset: nil).first
     }
 }

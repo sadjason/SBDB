@@ -12,7 +12,7 @@ import SQLite3
 
 /// 分析研究隐式、显式的 transaction
 ///
-/// - See also:
+/// - See Also:
 ///   - https://www.sqlite.org/atomiccommit.html
 ///   - https://www.sqlite.org/lang_transaction.html
 ///   - https://www.sqlite.org/lockingv3.html
@@ -40,7 +40,7 @@ class TransactionTests: XCTestCase {
         DispatchQueue.global().async {
             try? db.delete(from: Student.self)
             // student 表是空的，即便不手动调用 reset 或者 finalize，也会自动结束事务
-            let stmt = try! RawStatement(sql: "select * from student", database: db.pointer)
+            let stmt = try! _RawStatement(sql: "select * from student", database: db.pointer)
             stmt.step()
             DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
                 stmt.reset()
@@ -72,7 +72,7 @@ class TransactionTests: XCTestCase {
             // 插入两条数据，以防 select 语句自动结束事务
             try! db.insert(Util.generateStudent())
             try! db.insert(Util.generateStudent())
-            let stmt = try! RawStatement(sql: "select * from student", database: db.pointer)
+            let stmt = try! _RawStatement(sql: "select * from student", database: db.pointer)
             stmt.step()
             DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
                 stmt.reset()
@@ -125,7 +125,7 @@ class TransactionTests: XCTestCase {
             // 插入两条数据，以防 select 语句自动结束事务
             try! db.insert(Util.generateStudent())
             try! db.insert(Util.generateStudent())
-            let stmt = try! RawStatement(sql: "select * from student", database: db.pointer)
+            let stmt = try! _RawStatement(sql: "select * from student", database: db.pointer)
             stmt.step()
             DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
                 stmt.finalize()

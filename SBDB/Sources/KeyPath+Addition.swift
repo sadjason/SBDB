@@ -8,51 +8,52 @@
 
 import Foundation
 
-/// 基于 KeyPath 创建 where 语句
-extension PartialKeyPath where Root: KeyPathToColumnNameConvertiable {
+extension PartialKeyPath where Root: TableCodingKeyConvertiable {
     
-    static func > (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
-        guard let name = Root.columnName(of: keyPath) else { return .true }
-        return Column(name) > value
-    }
-
-    static func >= (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
-        guard let name = Root.columnName(of: keyPath) else { return .true }
-        return Column(name) >= value
-    }
-
-    static func < (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
-        guard let name = Root.columnName(of: keyPath) else { return .true }
-        return Column(name) < value
-    }
-
-    static func <= (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
-        guard let name = Root.columnName(of: keyPath) else { return .true }
-        return Column(name) <= value
-    }
-
-    static func == (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
-        guard let name = Root.columnName(of: keyPath) else { return .true }
-        return Column(name) == value
-    }
-
-    static func != (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
-        guard let name = Root.columnName(of: keyPath) else { return .true }
-        return Column(name) != value
+    public var stringValue: String {
+        Root.codingKey(of: self).stringValue
     }
 }
 
-extension PartialKeyPath where Root: KeyPathToColumnNameConvertiable {
+/// Support Condition
+extension PartialKeyPath where Root: TableCodingKeyConvertiable {
     
-    public func hashString() -> String? {
-        Root.columnName(of: self)
+    public static func > (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
+        Column(keyPath.stringValue) > value
     }
+
+    public static func >= (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
+        Column(keyPath.stringValue) >= value
+    }
+
+    public static func < (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
+        Column(keyPath.stringValue) < value
+    }
+
+    public static func <= (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
+        Column(keyPath.stringValue) <= value
+    }
+
+    public static func == (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
+        Column(keyPath.stringValue) == value
+    }
+
+    public static func != (keyPath: PartialKeyPath, value: BaseValueConvertible) -> Condition {
+        Column(keyPath.stringValue) != value
+    }
+}
+
+/// Support Order
+extension PartialKeyPath where Root: TableCodingKeyConvertiable {
     
     public func asc() -> Base.OrderTerm {
-        Base.OrderTerm(columnName: hashString()!, strategy: .asc)
+        Base.OrderTerm(column: stringValue, strategy: .asc)
     }
     
     public func desc() -> Base.OrderTerm {
-        Base.OrderTerm(columnName: hashString()!, strategy: .desc)
+        Base.OrderTerm(column: stringValue, strategy: .desc)
     }
 }
+
+/// Support Column
+

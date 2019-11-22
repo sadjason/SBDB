@@ -12,7 +12,7 @@ import SQLite3
 
 /// 分析研究 atomic commit 相关
 ///
-/// - See also:
+/// - See Also:
 ///   - https://www.sqlite.org/atomiccommit.html
 ///   - https://www.sqlite.org/lang_transaction.html
 ///   - https://www.sqlite.org/lockingv3.html
@@ -38,7 +38,7 @@ class AtomicCommitTests: XCTestCase {
     ///   - commit/rollback 后执行 commit，抛出错误：cannot commit - no transaction is active
     ///   - commit/rollback 后执行 rollback，抛出错误：cannot rollback - no transaction is active
     /// commit/rollback 重复执行问题，可以通过 `sqlite3_get_autocommit()` 来规避
-    ///   - See also: https://www.sqlite.org/c3ref/get_autocommit.html
+    ///   - See Also: https://www.sqlite.org/c3ref/get_autocommit.html
     /// begin 嵌套问题也可以通过 `sqlite3_get_autocommit()` 来规避？存疑，但可以通过弄一个标志位来解决
     func testNestTransaction() throws {
         let db = try! Util.openDatabase()

@@ -20,18 +20,18 @@ struct Student: TableCodable, Equatable {
     var extra: Data?
 }
 
-extension Student: KeyPathToColumnNameConvertiable {
-    static func columnName(of keyPath: PartialKeyPath<Student>) -> String? {
+extension Student: TableCodingKeyConvertiable {
+    static func codingKey(of keyPath: PartialKeyPath<Student>) -> CodingKey {
         switch keyPath {
-        case \Student.name: return "name"
-        case \Student.age: return "age"
-        case \Student.address: return "address"
-        case \Student.grade: return "grade"
-        case \Student.married: return "married"
-        case \Student.isBoy: return "isBoy"
-        case \Student.gpa: return "gpa"
-        case \Student.extra: return "extra"
-        default: return nil
+        case \Student.name: return CodingKeys.name
+        case \Student.age: return CodingKeys.age
+        case \Student.address: return CodingKeys.address
+        case \Student.grade: return CodingKeys.grade
+        case \Student.married: return CodingKeys.married
+        case \Student.isBoy: return CodingKeys.isBoy
+        case \Student.gpa: return CodingKeys.gpa
+        case \Student.extra: return CodingKeys.extra
+        default: fatalError()
         }
     }
 }

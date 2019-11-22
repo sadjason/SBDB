@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - Column
 
-struct Column: Expression {
+public struct Column: Expression {
     let name: String
     var sql: String { name }
 
@@ -21,7 +21,7 @@ struct Column: Expression {
 
 // MARK: Comparable & Equable Operators
 
-let kParam = ParameterPlaceholder
+fileprivate let kParam = ParameterPlaceholder
 
 extension Column {
 
@@ -277,6 +277,6 @@ extension ColumnConvertiable {
     }
 }
 
-public protocol KeyPathToColumnNameConvertiable {
-    static func columnName(of keyPath: PartialKeyPath<Self>) -> String?
+public protocol TableCodingKeyConvertiable {
+    static func codingKey(of keyPath: PartialKeyPath<Self>) -> CodingKey
 }

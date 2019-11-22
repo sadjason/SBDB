@@ -81,14 +81,14 @@ extension Base {
 extension Base {
 
     /// https://www.sqlite.org/lang_aggfunc.html
-    enum AggregateFunction {
-        case avg(Expression)
-        case count(Expression)
+    public enum AggregateFunction {
+        case avg(Column)
+        case count(Column)
         case countAll
-        case max(Expression)
-        case min(Expression)
-        case sum(Expression)
-        case total(Expression)
+        case max(Column)
+        case min(Column)
+        case sum(Column)
+        case total(Column)
     }
 }
 
@@ -120,11 +120,11 @@ extension Base {
         var column: Column
         var strategy: Base.Order? = nil
         var nullStrategy: NullStratery? = nil
-        init(columnName: Base.ColumnName) {
+        init(column columnName: Base.ColumnName) {
             self.column = Column(columnName)
         }
         
-        init(columnName: Base.ColumnName, strategy: Base.Order) {
+        init(column columnName: Base.ColumnName, strategy: Base.Order) {
             self.column = Column(columnName)
             self.strategy = strategy
         }

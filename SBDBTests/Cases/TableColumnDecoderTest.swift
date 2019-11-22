@@ -93,18 +93,3 @@ class TableColumnDecoderTest: XCTestCase {
         }
     }
 }
-
-struct Person: TableCodable {
-    var name: String
-    var age: Int
-}
-
-extension Person: KeyPathToColumnNameConvertiable {
-    static func columnName(of keyPath: PartialKeyPath<Person>) -> String? {
-        switch keyPath {
-        case \Person.name: return "name"
-        case \Person.age: return "age"
-        default: return nil
-        }
-    }
-}
