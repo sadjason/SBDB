@@ -34,11 +34,11 @@ class TransactionTests: XCTestCase {
     /// 有些隐式事务会自动结束，不需要调用 reset 或者 finalize
     func testSomeStatementWillAutoFinishTransaction() {
         let db = try! Util.openDatabase()
-        try? Student.delete(in: db)
+        try? db.delete(from: Student.self)
         try! Util.setJournalMode("delete", for: db)
         
         DispatchQueue.global().async {
-            try? Student.delete(in: db)
+            try? db.delete(from: Student.self)
             // student 表是空的，即便不手动调用 reset 或者 finalize，也会自动结束事务
             let stmt = try! RawStatement(sql: "select * from student", database: db.pointer)
             stmt.step()
@@ -53,7 +53,7 @@ class TransactionTests: XCTestCase {
             do {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
-                        try Util.generateStudent().save(in: db)
+                        try db.insert(Util.generateStudent())
                     } catch { self.neverExecute() }
                 }
             } catch { self.deadCode() }
@@ -70,8 +70,8 @@ class TransactionTests: XCTestCase {
         // transaction 1
         DispatchQueue.global().async {
             // 插入两条数据，以防 select 语句自动结束事务
-            try! Util.generateStudent().save(in: db)
-            try! Util.generateStudent().save(in: db)
+            try! db.insert(Util.generateStudent())
+            try! db.insert(Util.generateStudent())
             let stmt = try! RawStatement(sql: "select * from student", database: db.pointer)
             stmt.step()
             DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
@@ -87,7 +87,7 @@ class TransactionTests: XCTestCase {
             do {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
-                        try Util.generateStudent().save(in: db)
+                        try db.insert(Util.generateStudent())
                     } catch { self.noError() }
                 }
             } catch SQLiteError.TransactionError.commit(_, let code) {
@@ -106,7 +106,7 @@ class TransactionTests: XCTestCase {
             do {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
-                        try Util.generateStudent().save(in: db)
+                        try db.insert(Util.generateStudent())
                     } catch { self.neverExecute() }
                 }
             } catch { self.neverExecute() }
@@ -123,8 +123,8 @@ class TransactionTests: XCTestCase {
         // transaction 1
         DispatchQueue.global().async {
             // 插入两条数据，以防 select 语句自动结束事务
-            try! Util.generateStudent().save(in: db)
-            try! Util.generateStudent().save(in: db)
+            try! db.insert(Util.generateStudent())
+            try! db.insert(Util.generateStudent())
             let stmt = try! RawStatement(sql: "select * from student", database: db.pointer)
             stmt.step()
             DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
@@ -140,7 +140,7 @@ class TransactionTests: XCTestCase {
             do {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
-                        try Util.generateStudent().save(in: db)
+                        try db.insert(Util.generateStudent())
                     } catch { self.neverExecute() }
                 }
             } catch SQLiteError.TransactionError.commit(_, let code) {
@@ -159,7 +159,7 @@ class TransactionTests: XCTestCase {
             do {
                 try queue.inTransaction(mode: .immediate) { (db, _) in
                     do {
-                        try Util.generateStudent().save(in: db)
+                        try db.insert(Util.generateStudent())
                     } catch { self.neverExecute() }
                 }
             } catch { self.neverExecute() }
@@ -177,7 +177,7 @@ class TransactionTests: XCTestCase {
             Thread.sleep(forTimeInterval: 0.1)
             let db = try! Util.openDatabase()
             try! db.beginTransaction()
-            let _ = try! Student.fetchObjects(from: db)
+            _ = try! db.select(from: Student.self)
             Thread.sleep(forTimeInterval: 0.5)
             try! db.endTransaction()
         }
@@ -185,7 +185,7 @@ class TransactionTests: XCTestCase {
         DispatchQueue.global().async {
             let db = try! Util.openDatabase()
             try? db.beginTransaction()
-            try! Util.generateStudent().save(in: db)
+            try! db.insert(Util.generateStudent())
             
             Thread.sleep(forTimeInterval: 0.2)
             
@@ -200,7 +200,7 @@ class TransactionTests: XCTestCase {
         try? db.beginTransaction()
         Thread.sleep(forTimeInterval: 1.0)
         do {
-            let _ = try Student.fetchObject(from: db)
+            _ = try db.select(from: Student.self)
             neverExecute()
         } catch let SQLiteError.ExecuteError.prepareStmtFailed(desc, code) {
             print("read failed. desc: \(desc), code: \(code)")

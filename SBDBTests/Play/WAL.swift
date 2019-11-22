@@ -35,7 +35,7 @@ class WAL: XCTestCase {
         
         try db.beginTransaction()
         try (0..<10000).forEach { (_) in
-            try Util.generateStudent().save(in: db)
+            try db.insert(Util.generateStudent())
         }
         try db.endTransaction()
         
@@ -53,7 +53,7 @@ class WAL: XCTestCase {
         print("dataPath = \(Util.databasePath)")
         try? Util.setJournalMode("delete", for: db)
         
-        try Student.delete(in: db)
+        try db.delete(from: Student.self)
         
 //        print("完成 10000 条数据的写入")
 //
@@ -94,7 +94,7 @@ class WAL: XCTestCase {
         }
         print("dataPath = \(Util.databasePath)")
         try db.beginTransaction()
-        let count = try Student.fetchObjects(from: db).count
+        let count = try db.select(from: Student.self).count
         print("渠道了 \(count) 条数据")
     }
     

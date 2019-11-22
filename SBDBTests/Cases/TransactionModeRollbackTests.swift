@@ -40,7 +40,7 @@ class TransactionModeRollbackTests: XCTestCase {
             let db = try prepareDatabase()
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
                 try! db.beginTransaction(withMode: .deferred)
-                let _ = try! Student.fetchObject(from: db)
+                _ = try! db.selectOne(from: Student.self)
                 Thread.sleep(forTimeInterval: 0.5)
                 try! db.endTransaction()
             }
@@ -51,7 +51,7 @@ class TransactionModeRollbackTests: XCTestCase {
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
                 do {
                     try db.beginTransaction(withMode: .deferred)
-                    let _ = try Student.fetchObject(from: db)
+                    _ = try db.selectOne(from: Student.self)
                     try db.endTransaction()
                 } catch {
                     XCTFail()
@@ -68,7 +68,7 @@ class TransactionModeRollbackTests: XCTestCase {
             let db = try prepareDatabase()
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
                 try! db.beginTransaction(withMode: .deferred)
-                let _ = try! Student.fetchObject(from: db)
+                _ = try! db.selectOne(from: Student.self)
                 Thread.sleep(forTimeInterval: 0.5)
                 try! db.endTransaction()
             }
@@ -79,7 +79,7 @@ class TransactionModeRollbackTests: XCTestCase {
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
                 do {
                     try db.beginTransaction(withMode: .deferred)
-                    try Util.generateStudent().save(in: db)
+                    try db.insert(Util.generateStudent())
                     try db.endTransaction()
                     self.neverExecute()
                 } catch SQLiteError.TransactionError.commit(_, let code) {
@@ -100,7 +100,7 @@ class TransactionModeRollbackTests: XCTestCase {
             let db = try prepareDatabase()
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
                 try! db.beginTransaction(withMode: .deferred)
-                let _ = try! Student.fetchObject(from: db)
+                _ = try! db.selectOne(from: Student.self)
                 Thread.sleep(forTimeInterval: 0.5)
                 try! db.endTransaction()
             }
@@ -131,7 +131,7 @@ class TransactionModeRollbackTests: XCTestCase {
             let db = try prepareDatabase()
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
                 try! db.beginTransaction(withMode: .deferred)
-                let _ = try! Student.fetchObject(from: db)
+                _ = try! db.selectOne(from: Student.self)
                 Thread.sleep(forTimeInterval: 0.5)
                 try! db.endTransaction()
             }
@@ -165,7 +165,7 @@ class TransactionModeRollbackTests: XCTestCase {
             let db = try prepareDatabase()
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
                 try! db.beginTransaction(withMode: .deferred)
-                try! Util.generateStudent().save(in: db)
+                try! db.insert(Util.generateStudent())
                 Thread.sleep(forTimeInterval: 0.5)
                 try! db.endTransaction()
             }
@@ -176,7 +176,7 @@ class TransactionModeRollbackTests: XCTestCase {
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
                 do {
                     try db.beginTransaction(withMode: .deferred)
-                    let _ = try Student.fetchObject(from: db)
+                    _ = try! db.selectOne(from: Student.self)
                     try db.endTransaction()
                 } catch {
                     XCTFail()
@@ -193,7 +193,7 @@ class TransactionModeRollbackTests: XCTestCase {
             let db = try prepareDatabase()
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
                 try! db.beginTransaction(withMode: .deferred)
-                try! Util.generateStudent().save(in: db)
+                try! db.insert(Util.generateStudent())
                 Thread.sleep(forTimeInterval: 0.5)
                 try! db.endTransaction()
             }
@@ -204,7 +204,7 @@ class TransactionModeRollbackTests: XCTestCase {
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
                 do {
                     try db.beginTransaction(withMode: .deferred)
-                    try Util.generateStudent().save(in: db)
+                    try db.insert(Util.generateStudent())
                     try db.endTransaction()
                     self.neverExecute()
                 } catch SQLiteError.ExecuteError.stepFailed(_, let code) {
@@ -225,7 +225,7 @@ class TransactionModeRollbackTests: XCTestCase {
             let db = try prepareDatabase()
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
                 try! db.beginTransaction(withMode: .deferred)
-                try! Util.generateStudent().save(in: db)
+                try! db.insert(Util.generateStudent())
                 Thread.sleep(forTimeInterval: 0.5)
                 try! db.endTransaction()
             }
@@ -256,7 +256,7 @@ class TransactionModeRollbackTests: XCTestCase {
             let db = try prepareDatabase()
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
                 try! db.beginTransaction(withMode: .deferred)
-                try! Util.generateStudent().save(in: db)
+                try! db.insert(Util.generateStudent())
                 Thread.sleep(forTimeInterval: 0.5)
                 try! db.endTransaction()
             }
@@ -301,7 +301,7 @@ class TransactionModeRollbackTests: XCTestCase {
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
                 do {
                     try db.beginTransaction(withMode: .deferred)
-                    let _ = try Student.fetchObject(from: db)
+                    _ = try! db.selectOne(from: Student.self)
                     try db.endTransaction()
                 } catch {
                     XCTFail()
@@ -329,7 +329,7 @@ class TransactionModeRollbackTests: XCTestCase {
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
                 do {
                     try db.beginTransaction(withMode: .deferred)
-                    try Util.generateStudent().save(in: db)
+                    try db.insert(Util.generateStudent())
                     try db.endTransaction()
                     self.neverExecute()
                 } catch SQLiteError.ExecuteError.stepFailed(_, let code) {
@@ -425,7 +425,7 @@ class TransactionModeRollbackTests: XCTestCase {
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
                 do {
                     try db.beginTransaction(withMode: .deferred)
-                    let _ = try Student.fetchObject(from: db)
+                    _ = try db.selectOne(from: Student.self)
                     try db.endTransaction()
                     self.neverExecute()
                 } catch SQLiteError.ExecuteError.stepFailed(_, let code) {
@@ -456,7 +456,7 @@ class TransactionModeRollbackTests: XCTestCase {
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
                 do {
                     try db.beginTransaction(withMode: .deferred)
-                    try Util.generateStudent().save(in: db)
+                    try db.insert(Util.generateStudent())
                     try db.endTransaction()
                     self.neverExecute()
                 } catch SQLiteError.ExecuteError.stepFailed(_, let code) {

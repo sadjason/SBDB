@@ -142,6 +142,22 @@ extension Base {
             }
             return chunk
         }
+        
+        mutating func nullsFirst() {
+            nullStrategy = .nullsFirst
+        }
+        
+        mutating func nullsLast() {
+            nullStrategy = .nullsLast
+        }
+        
+        mutating func asc() {
+            strategy = .asc
+        }
+        
+        mutating func desc() {
+            strategy = .desc
+        }
     }
 }
 

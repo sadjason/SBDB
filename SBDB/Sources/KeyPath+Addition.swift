@@ -43,7 +43,16 @@ extension PartialKeyPath where Root: KeyPathToColumnNameConvertiable {
 }
 
 extension PartialKeyPath where Root: KeyPathToColumnNameConvertiable {
-    func hashString() -> String? {
+    
+    public func hashString() -> String? {
         Root.columnName(of: self)
+    }
+    
+    public func asc() -> Base.OrderTerm {
+        Base.OrderTerm(columnName: hashString()!, strategy: .asc)
+    }
+    
+    public func desc() -> Base.OrderTerm {
+        Base.OrderTerm(columnName: hashString()!, strategy: .desc)
     }
 }

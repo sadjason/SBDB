@@ -1,5 +1,5 @@
 //
-//  Delete.swift
+//  DeleteStatement.swift
 //  SBDB
 //
 //  Created by zhangwei on 2019/10/24.
@@ -35,13 +35,5 @@ extension DeleteStatement: ParameterExpression {
 
     var params: [BaseValueConvertible]? {
         return whereCondition?.params
-    }
-}
-
-extension TableEncodable {
-
-    static func delete(in database: Database, where condition: Condition? = nil) throws {
-        let deleteStmt = DeleteStatement(tableName: Self.tableName, where: condition)
-        try database.exec(sql: deleteStmt.sql, withParams: deleteStmt.params)
     }
 }

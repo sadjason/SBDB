@@ -16,11 +16,11 @@ class UpdateTests: XCTestCase {
     // MARK: Creating & Droping Table
     
     func _createStudentTable(in db: Database, ifNotExists: Bool = true) throws {
-        try Student.create(in: db, ifNotExists: ifNotExists)
+        try db.createTable(Student.self, options: ifNotExists ? .ifNotExists : [], closure: nil)
     }
     
     func _deleteStudentTable(from db: Database) throws {
-        try? Student.drop(from: db)
+        try? db.dropTable(Student.self)
     }
     
     /// 首次创建 table
@@ -34,6 +34,7 @@ class UpdateTests: XCTestCase {
     
     /// 多次重复创建 table
     func testCreateTableMultiTimes() throws {
+        Database.disableStatementCache = true
         let db = try Util.openDatabase()
         try _deleteStudentTable(from: db)
         
@@ -41,7 +42,7 @@ class UpdateTests: XCTestCase {
         do {
             try _createStudentTable(in: db, ifNotExists: false)
             deadCode()
-        } catch let SQLiteError.ExecuteError.stepFailed(desc, code) {
+        } catch let SQLiteError.ExecuteError.prepareStmtFailed(desc, code) {
             print("create table failed: \(desc)")
             XCTAssert(code == SQLITE_ERROR)
         } catch {
@@ -80,8 +81,8 @@ class UpdateTests: XCTestCase {
     func testOneInsert() throws {
         let db = try _prepareDatabase()
         let s = Util.generateStudent()
-        try s.save(in: db)
-        guard let f_s = try Student.fetchObject(from: db) else {
+        try db.insert(s)
+        guard let f_s = try db.selectOne(from: Student.self) else {
             deadCode()
             return
         }
@@ -97,9 +98,9 @@ class UpdateTests: XCTestCase {
             s.age = UInt8(index + 1)
             return s
         }
-        try Student.save(students, in: db)
+        try db.insert(students)
         
-        let f_students = try Student.fetchObjects(from: db, orderBy: \Student.age)
+        let f_students = try db.select(from: Student.self, orderBy: \Student.age)
         XCTAssert(f_students.count == students.count)
         (0..<students.count).forEach { (index) in
             XCTAssert(f_students[index] == students[index])
@@ -117,26 +118,25 @@ class UpdateTests: XCTestCase {
         s2.name = "s2"
         
         do {
-            try Student.save([s1, s2], in: db)
-            
-            XCTAssert(try Student.fetchObjects(from: db).count == 2)
-            try Student.delete(in: db)
-            XCTAssert(try Student.fetchObjects(from: db).count == 0)
+            try db.insert(s1, s2)
+            XCTAssert(try db.select(from: Student.self).count == 2)
+            try db.delete(from: Student.self)
+            XCTAssert(try db.select(from: Student.self).count == 0)
             
             // 无效删除也是 ok 的
-            try Student.delete(in: db)
+            try db.delete(from: Student.self)
         }
         
         do {
-            try Student.save([s1, s2], in: db)
+            try db.insert(s1, s2)
             
-            XCTAssert(try Student.fetchObjects(from: db).count == 2)
-            try Student.delete(in: db, where: \Student.name == "s1")
-            let f_s = try Student.fetchObjects(from: db)
+            XCTAssert(try db.select(from: Student.self).count == 2)
+            try db.delete(from: Student.self, where: \Student.name == "s1")
+            let f_s = try db.select(from: Student.self)
             XCTAssert(f_s.count == 1 && f_s.first! == s2)
             
             // 无效删除也是 ok 的
-            try Student.delete(in: db, where: \Student.name == "s1")
+            try db.delete(from: Student.self, where: \Student.name == "s1")
         }
     }
     
@@ -165,16 +165,15 @@ class UpdateTests: XCTestCase {
         
         students.append(contentsOf: appendings)
         
-        try Student.save(students, in: db)
+        try db.insert(students)
         
-        try Student.update(in: db, where: \Student.name == specialOne.name) { assign in
+        try db.update(Student.self, where: \Student.age == 50) { assign in
             assign(\Student.married, !specialOne.married)
             assign(\Student.extra, Base.null)
             assign(\Student.gpa, specialOne.gpa + 0.1)
         }
         
-        let orderTerm = Base.OrderTerm(columnName: "age", strategy: .asc)
-        let dbStudents = try Student.fetchObjects(from: db, orderBy: [orderTerm])
+        let dbStudents = try db.select(from: Student.self, orderBy: \Student.age)
         
         XCTAssert(dbStudents.count == students.count)
         

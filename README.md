@@ -22,7 +22,7 @@ let db = try Database(path: path) // or Database(path: path, options: [.readwrit
 ### Creating & Droping Table 
 
 ```swift
-struct Student: TableCodable {
+struct Student {
     var name: String
     var age: UInt8
     var address: String?
@@ -33,34 +33,35 @@ struct Student: TableCodable {
     var extra: Data?
 }
 
-// create table (ifNotExists)
-try Student.create(in: db)
+extension Student: TableCodable { }
+
+// create table
+try db.createTable(Student.self)
+// create table if not exists
+try db.createTable(Student.self, options: .ifNotExists)
 
 // drop table
-try Student.drop(from: db)
+try db.dropTable(Student.self)
 ```
 
 ### Inserting
 
 ```swift
-let singleStudent: Student = generateStudent()
-
 // 单条插入
-try singleStudent.save(in: db)
+try db.insert(generateStudent())
 
 // 批量插入
-let students = (0..<100).map { generateStudent() }
-try Student.save(students, in: db)
+try db.insert((0..<100).map { generateStudent() })
 ```
 
 ### Deleting
 
 ```swift
 // 全删
-try Student.delete(in: db)
+try db.delete(from: Student.self)
 
 // 条件删
-try Student.delete(in: db, where: Column("age") < 18)
+try db.delete(from: Student.self, where: Column("age") < 18)
 ```
 
 如果 `Student` 实现了 `KeyPathToColumnNameConvertiable` 协议，还可以基于 KeyPath 实现更高级的操作：
@@ -85,23 +86,13 @@ extension Student: KeyPathToColumnNameConvertiable {
 
 ```swift
 // 条件删
-try Student.delete(in: db, where: \Student.name < 18)
+try db.delete(from: Student.self, where: \Student.name < 18)
 ```
 
 ### Updating
 
 ```swift
-var assignment = UpdateAssignment()
-assignment["married"] = false
-assignment["extra"] = Base.null
-assignment["gpa"] = 4.0
-
-Student.update(in: db, assignment: assignment, where: Column("name") == "the one")
-```
-
-```swift
-// 或者基于 KeyPath（前提是 Student 实现了 `KeyPathToColumnNameConvertiable` 协议：
-try Student.update(in: db, where: \Student.name == "the one") { assign in
+try db.update(Student.self, where: \Student.name == "the one") { assign in
     assign(\Student.married, false)
     assign(\Student.extra, Base.null)
     assign(\Student.gpa, 4.0)

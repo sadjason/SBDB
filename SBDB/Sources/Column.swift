@@ -109,22 +109,6 @@ extension Column {
     }
 }
 
-// MARK: - ColumnIndexed
-
-/// https://www.sqlite.org/syntax/indexed-column.html
-public struct ColumnIndexed: Expression {
-    let columnName: Base.ColumnName
-    let collate: Base.Collate?
-    let order: Base.Order?
-
-    var sql: String {
-        var str = columnName
-        str += (collate != nil ? " collate \(collate!.sql)" : "")
-        str += (order != nil ? order!.sql : "")
-        return str
-    }
-}
-
 // MARK: - ColumnDefinition
 
 /// https://www.sqlite.org/syntax/column-def.html
@@ -293,6 +277,6 @@ extension ColumnConvertiable {
     }
 }
 
-protocol KeyPathToColumnNameConvertiable {
+public protocol KeyPathToColumnNameConvertiable {
     static func columnName(of keyPath: PartialKeyPath<Self>) -> String?
 }

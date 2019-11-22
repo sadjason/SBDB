@@ -9,18 +9,41 @@
 import Foundation
 
 public enum Table {
+    
+    // MARK: IndexedColumn
+
+    /// https://www.sqlite.org/syntax/indexed-column.html
+    public struct IndexedColumn: Expression {
+        let columnName: Base.ColumnName
+        let collate: Base.Collate?
+        let order: Base.Order?
+        
+        init(_ name: String) {
+            columnName = name
+            collate = nil
+            order = nil
+        }
+
+        var sql: String {
+            var str = columnName
+            str += (collate != nil ? " collate \(collate!.sql)" : "")
+            str += (order != nil ? order!.sql : "")
+            return str
+        }
+    }
+    
+    // MARK: Contraint
 
     public enum Constraint: Expression {
-        case primaryKey(Array<ColumnIndexed>, Base.Conflict?)
-        case unique(Array<ColumnIndexed>, Base.Conflict?)
+        case primaryKey(Array<IndexedColumn>, Base.Conflict?)
+        case unique(Array<IndexedColumn>, Base.Conflict?)
 
         // TODO: support foreign key
         // TODO: support check
-        // TOOD: support index
 
         var sql: String {
             let command: String
-            let indexedColumns: Array<ColumnIndexed>
+            let indexedColumns: Array<IndexedColumn>
             let onConflict: Base.Conflict?
             switch self {
             case let .primaryKey(value1, value2):
@@ -36,12 +59,26 @@ public enum Table {
             return str
         }
     }
+    
+    public struct CreateOptions: OptionSet {
+        public let rawValue: Int32
+        public init(rawValue: Int32) {
+            self.rawValue = rawValue
+        }
+        
+        public static let ifNotExists = CreateOptions(rawValue: 1)
+        public static let withoutRowId = CreateOptions(rawValue: 1<<1)
+    }
+}
 
-    public class Definition: ParameterExpression {
+extension Table {
 
+    // https://www.sqlite.org/lang_createtable.html
+    public struct CreateStatement: ParameterExpression {
+        
         let name: String
         var columns: [ColumnDefinition] = []
-        var constraints: [Constraint] = []
+        var constraints: [Table.Constraint] = []
 
         public var ifNotExists: Bool?
         public var withoutRowId: Bool?
@@ -51,23 +88,23 @@ public enum Table {
         }
 
         @discardableResult
-        public func column(_ name: String, type: ColumnDefinition.DataType = .blob) -> ColumnDefinition {
+        mutating public func addColumn(_ name: String, type: ColumnDefinition.DataType = .blob) -> ColumnDefinition {
             let column = ColumnDefinition(name, type)
             columns.append(column)
             return column
         }
 
-        public func setPrimaryKey(_ indexedColumns: Array<ColumnIndexed>, onConflict: Base.Conflict?) {
+        mutating public func setPrimaryKey(_ indexedColumns: Array<IndexedColumn>, onConflict: Base.Conflict?) {
             constraints.append(.primaryKey(indexedColumns, onConflict))
         }
 
-        public func unique(_ indexedColumns: Array<ColumnIndexed>, onConflict: Base.Conflict?) {
+        mutating public func setUnique(_ indexedColumns: Array<IndexedColumn>, onConflict: Base.Conflict?) {
             constraints.append(.primaryKey(indexedColumns, onConflict))
         }
     }
 }
 
-extension Table.Definition {
+extension Table.CreateStatement {
 
     var sql: String {
         var str = "create table"
@@ -90,45 +127,21 @@ extension Table.Definition {
     var params: [BaseValueConvertible]? { nil }
 }
 
-struct TableDropStatement: ParameterExpression {
+extension Table {
+    
+    // https://www.sqlite.org/lang_droptable.html
+    public struct DropStatement: ParameterExpression {
 
-    let tableName: String
-    init(name: String) {
-        tableName = name
-    }
-
-    var sql: String { "drop table \(tableName)" }
-
-    var params: [BaseValueConvertible]? = nil
-}
-
-public extension TableEncodable {
-    static func create(in database: Database, closure: (Table.Definition) -> Void) throws {
-        let definition = Table.Definition(name: tableName)
-        closure(definition)
-        try database.exec(sql: definition.sql, withParams: definition.params)
-    }
-}
-
-public extension CustomTableNameConvertible {
-    static func drop(from database: Database) throws {
-        let drop = TableDropStatement(name: self.tableName)
-        try database.exec(sql: drop.sql, withParams: drop.params)
-    }
-}
-
-
-public extension TableDecodable {
-    static func create(in database: Database, ifNotExists: Bool = true) throws {
-        let columnStructures = try TableColumnDecoder.default.decode(Self.self)
-        let definition = Table.Definition(name: tableName)
-        definition.ifNotExists = true
-        for structure in columnStructures.values {
-            let col = definition.column(structure.name, type: structure.type)
-            if structure.nonnull {
-                col.notNull()
-            }
+        let tableName: String
+        init(name: String) {
+            tableName = name
         }
-        try database.exec(sql: definition.sql, withParams: definition.params)
+
+        var sql: String { "drop table \(tableName)" }
+
+        var params: [BaseValueConvertible]? = nil
     }
 }
+
+public typealias CreateTableStatement = Table.CreateStatement
+public typealias DropTableStatement = Table.DropStatement

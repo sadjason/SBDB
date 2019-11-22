@@ -118,3 +118,8 @@ extension Condition {
     }
 }
 
+extension ParameterExpression {
+    func exec(in db: Database) throws {
+        try db.exec(sql: sql, withParams: params)
+    }
+}

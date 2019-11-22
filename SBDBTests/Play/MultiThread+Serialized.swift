@@ -16,18 +16,7 @@ class MultiThread: XCTestCase {
 
 
     func createTableIfNeeded(in db: Database) throws {
-        try? Student.create(in: db) { (tb) in
-            tb.ifNotExists = true
-
-            tb.column("name", type: .text).notNull()
-            tb.column("age", type: .integer).notNull()
-            tb.column("address", type: .text)
-            tb.column("grade", type: .integer)
-            tb.column("married", type: .integer)
-            tb.column("isBoy", type: .integer)
-            tb.column("gpa", type: .real)
-            tb.column("extra", type: .blob)
-        }
+        try? db.createTable(Student.self)
     }
 
     func insertStudentsConcurrently(in db: Database) throws {
@@ -38,7 +27,7 @@ class MultiThread: XCTestCase {
                             grade: 12, married: true, isBoy: true,
                             gpa: 4.5, extra: nil)
             (0..<1000).forEach { _ in
-                try? s.save(in: db)
+                try? db.insert(s)
             }
         }
 
@@ -49,7 +38,7 @@ class MultiThread: XCTestCase {
                             grade: 12, married: true, isBoy: true,
                             gpa: 4.5, extra: nil)
             (0..<1000).forEach { _ in
-                try? s.save(in: db)
+                try? db.insert(s)
             }
         }
     }
@@ -59,7 +48,7 @@ class MultiThread: XCTestCase {
                         grade: 12, married: true, isBoy: true,
                         gpa: 4.5, extra: nil)
         (0..<1000).forEach { _ in
-            try? s.save(in: db)
+            try? db.insert(s)
         }
     }
 
@@ -67,19 +56,19 @@ class MultiThread: XCTestCase {
 
     // Multi-Thread 模式下多线程访问一个 connection，会 crash:
     //   > [logging] BUG IN CLIENT OF libsqlite3.dylib: illegal multi-threaded access to database connection
-    func testConcurrentInsertingInMultiThreadMode() throws {
-        let db: Database = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .noMutex])
-        try createTableIfNeeded(in: db)
-        try Student.delete(in: db)
-        try insertStudentsConcurrently(in: db)
-        Thread.sleep(forTimeInterval: 2.0)
-    }
+//    func testConcurrentInsertingInMultiThreadMode() throws {
+//        let db: Database = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .noMutex])
+//        try createTableIfNeeded(in: db)
+//        try db.delete(from: Student.self)
+//        try insertStudentsConcurrently(in: db)
+//        Thread.sleep(forTimeInterval: 2.0)
+//    }
 
     // Serialized 模式下多线程访问一个 connection，没毛病
     func testConcurrentInsertingInSerializedMode() throws {
         let db: Database = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .fullMutex])
         try createTableIfNeeded(in: db)
-        try Student.delete(in: db)
+        try db.delete(from: Student.self)
         try insertStudentsConcurrently(in: db)
         Thread.sleep(forTimeInterval: 2.0)
     }
@@ -89,7 +78,7 @@ class MultiThread: XCTestCase {
     func testInsertingPerformanceInMultiThreadMode() throws {
         let db: Database = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .noMutex])
         try createTableIfNeeded(in: db)
-        try Student.delete(in: db)
+        try db.delete(from: Student.self)
         measure {
             try? insertStudents(in: db)
         }
@@ -98,7 +87,7 @@ class MultiThread: XCTestCase {
     func testInsertingPerformanceInSerializedMode() throws {
         let db: Database = try Util.openDatabase(options: [.readwrite, .createIfNotExists, .fullMutex])
         try createTableIfNeeded(in: db)
-        try Student.delete(in: db)
+        try db.delete(from: Student.self)
         measure {
             try? insertStudents(in: db)
         }

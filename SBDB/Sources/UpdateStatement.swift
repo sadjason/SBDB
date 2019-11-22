@@ -1,5 +1,5 @@
 //
-//  Update.swift
+//  UpdateStatement.swift
 //  SBDB
 //
 //  Created by zhangwei on 2019/10/23.
@@ -21,6 +21,8 @@ public enum UpdateMode: Expression {
         }
     }
 }
+
+public typealias UpdateAssignment = Dictionary<String, BaseValueConvertible>
 
 struct UpdateStatement {
     
@@ -61,41 +63,37 @@ extension UpdateStatement: ParameterExpression {
     }
 }
 
-public typealias UpdateAssignment = Dictionary<String, BaseValueConvertible>
-
-extension TableEncodable {
-    
-    static func update(
-        in db: Database,
-        assignment: UpdateAssignment,
-        withMode mode: UpdateMode = .update,
-        where condition: Condition? = nil
-    ) throws {
-        let stmt = UpdateStatement(tableName: tableName, assigment: assignment, mode: mode, where: condition)
-        try db.exec(sql: stmt.sql, withParams: stmt.params)
-    }
-    
-}
-
-public typealias AssignHandler<Root> = (PartialKeyPath<Root>, BaseValueConvertible) -> Void
-
-extension TableEncodable where Self: KeyPathToColumnNameConvertiable  {
-    
-    static func update(
-        in db: Database,
-        where condition: Condition,
-        assign: (AssignHandler<Self>) -> Void
-    ) throws {
-        var assignment = UpdateAssignment()
-        
-        let handler: AssignHandler<Self> = { (k, v) in
-            guard let key = k.hashString() else {
-                return
-            }
-            assignment[key] = v
-        }
-        assign(handler)
-        
-        try update(in: db, assignment: assignment, withMode: .update, where: condition)
-    }
-}
+//extension TableEncodable {
+//    
+//    static func update(
+//        in db: Database,
+//        assignment: UpdateAssignment,
+//        withMode mode: UpdateMode = .update,
+//        where condition: Condition? = nil
+//    ) throws {
+//        let stmt = UpdateStatement(tableName: tableName, assigment: assignment, mode: mode, where: condition)
+//        try db.exec(sql: stmt.sql, withParams: stmt.params)
+//    }
+//    
+//}
+//
+//extension TableEncodable where Self: KeyPathToColumnNameConvertiable  {
+//    
+//    static func update(
+//        in db: Database,
+//        where condition: Condition,
+//        assign: (AssignHandler<Self>) -> Void
+//    ) throws {
+//        var assignment = UpdateAssignment()
+//        
+//        let handler: AssignHandler<Self> = { (k, v) in
+//            guard let key = k.hashString() else {
+//                return
+//            }
+//            assignment[key] = v
+//        }
+//        assign(handler)
+//        
+//        try update(in: db, assignment: assignment, withMode: .update, where: condition)
+//    }
+//}

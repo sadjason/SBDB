@@ -3,7 +3,7 @@
 //  SBDB
 //
 //  Created by zhangwei on 2019/11/20.
-//  Copyright © 2019 zhangwei. All rights reserved.
+//  Copyright © 2019 ByteDance. All rights reserved.
 //
 
 import Foundation

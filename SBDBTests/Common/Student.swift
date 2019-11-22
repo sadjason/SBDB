@@ -89,20 +89,8 @@ extension Util {
 
 extension Util {
     static func createStudentTable() throws {
-        try createDatabaseQueue().inDatabasae { (db) in
-            try? Student.create(in: db) { (tb) in
-                tb.ifNotExists = true
-
-                tb.column("id", type: .integer).primaryKey()
-                tb.column("name", type: .text).notNull()
-                tb.column("age", type: .integer).notNull()
-                tb.column("address", type: .text)
-                tb.column("grade", type: .integer)
-                tb.column("married", type: .integer)
-                tb.column("isBoy", type: .integer)
-                tb.column("gpa", type: .real)
-                tb.column("extra", type: .blob)
-            }
+        try createDatabaseQueue().inDatabasae { db in
+            try? db.createTable(Student.self)
         }
     }
 }

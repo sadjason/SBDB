@@ -17,7 +17,7 @@ class SerializedTests: XCTestCase {
         let db = try! Util.openDatabase()
         try! Util.setJournalMode("delete", for: db)
         try! Util.createStudentTable()
-        try! Student.delete(in: db);
+        try! db.delete(from: Student.self)
     }
 
     /// jounalMode = rollback/delete, threadSafeMode = serialized
@@ -38,7 +38,7 @@ class SerializedTests: XCTestCase {
         let db = try prepareSerializedDatabase()
         self.measure {
             try! db.beginTransaction()
-            try! (0..<5000).forEach { _ in try Util.generateStudent().save(in: db) }
+            try! (0..<5000).forEach { _ in try db.insert(Util.generateStudent()) }
             try! db.endTransaction()
         }
     }
@@ -47,7 +47,7 @@ class SerializedTests: XCTestCase {
         let db = try prepareMultiThreadDatabase()
         self.measure {
             try! db.beginTransaction()
-            try! (0..<5000).forEach { _ in try Util.generateStudent().save(in: db) }
+            try! (0..<5000).forEach { _ in try db.insert(Util.generateStudent()) }
             try! db.endTransaction()
         }
     }
@@ -55,14 +55,14 @@ class SerializedTests: XCTestCase {
     func testBatchSelectWithSerializedMode() throws {
         let db = try prepareMultiThreadDatabase()
         self.measure {
-            try? (0..<10000).forEach { _ in try Util.generateStudent().save(in: db) }
+            try? (0..<10000).forEach { _ in try db.insert(Util.generateStudent()) }
         }
     }
 
     func testBatchSelectWithMultiThreadMode() throws {
         let db = try prepareMultiThreadDatabase()
         self.measure {
-            try? (0..<10000).forEach { _ in try Util.generateStudent().save(in: db) }
+            try? (0..<10000).forEach { _ in try db.insert(Util.generateStudent()) }
         }
     }
 }

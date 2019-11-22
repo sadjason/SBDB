@@ -16,14 +16,14 @@ class SelectTests: XCTestCase {
 
     override func setUp() {
         database = try! Util.openDatabase()
-        try? Student.delete(in: database)
+        try? database.delete(from: Student.self)
     }
 
     /// 插入一条数据，然后取出，前后二者是相等的
     func testInsertOne() throws {
         let s1 = Util.generateStudent()
-        try s1.save(in: database)
-        let s2 = try Student.fetchObject(from: database)
+        try database.insert(s1)
+        let s2 = try database.selectOne(from: Student.self)
         print(s1)
         print(s2!)
         XCTAssert(s1 == s2)
@@ -37,13 +37,13 @@ class SelectTests: XCTestCase {
             s.isBoy = (index % 2 == 1)
             return s
         }
-        try students.forEach { try $0.save(in: database) }
+        try students.forEach { try database.insert($0) }
 
-        let result1 = try Student.fetchObjects(from: database, where: \Student.age > 50)
+        let result1 = try database.select(from: Student.self, where: \Student.age > 50)
         XCTAssert(result1.count == 50)
         result1.forEach { XCTAssert($0.age > 50) }
 
-        let result2 = try Student.fetchObjects(from: database, where: \Student.age > 50 && \Student.isBoy == 1 )
+        let result2 = try database.select(from: Student.self, where: \Student.age > 50 && \Student.isBoy == 1)
         XCTAssert(result2.count == 25)
         result2.forEach { XCTAssert($0.age > 50 && $0.isBoy!) }
     }
@@ -56,21 +56,17 @@ class SelectTests: XCTestCase {
             s.isBoy = (index % 2 == 1)
             return s
         }
-        try students.forEach { try $0.save(in: database) }
+        try students.forEach { try database.insert($0) }
 
         // 正序
-        var order1 = Base.OrderTerm(columnName: "age")
-        order1.strategy = .asc
-        let result1 = try Student.fetchObjects(from: database, orderBy: [order1])
+        let result1 = try database.select(from: Student.self, orderBy: \Student.age)
         XCTAssert(result1.count == students.count)
         students.enumerated().forEach { (index, r) in
             XCTAssert(result1[index] == r)
         }
 
         // 逆序
-        var order2 = Base.OrderTerm(columnName: "age")
-        order2.strategy = .desc
-        let result2 = try Student.fetchObjects(from: database, orderBy: [order2])
+        let result2 = try database.select(from: Student.self, orderBy: (\Student.age).desc())
         XCTAssert(result2.count == students.count)
         students.enumerated().forEach { (index, r) in
             XCTAssert(result2[students.count - 1 - index] == r)

@@ -1,5 +1,5 @@
 //
-//  Insert.swift
+//  InsertStatement.swift
 //  SBDB
 //
 //  Created by zhangwei on 2019/10/23.
@@ -71,33 +71,33 @@ extension InsertStatement {
     }
 }
 
-extension TableEncodable {
-
-    static func save(
-        _ objects: [Self],
-        in database: Database,
-        withMode mode: InsertMode = .insert
-    ) throws
-    {
-        guard objects.count > 0 else {
-            return
-        }
-
-        if objects.count == 1 {
-            try objects.first!.save(in: database, withMode: mode)
-            return
-        }
-
-        let encoder = TableEncoder.default
-        let rows = try objects.map { try encoder.encode($0) }
-        let stmt = InsertStatement(tableName: self.tableName, rows: rows, mode: mode)
-        try stmt.exec(in: database)
-    }
-
-    func save(in database: Database, withMode mode: InsertMode = .insert) throws {
-        let encoder = TableEncoder.default
-        let row = try encoder.encode(self)
-        let stmt = InsertStatement(tableName: Self.tableName, rows: [row], mode: mode)
-        try stmt.exec(in: database)
-    }
-}
+//extension TableEncodable {
+//
+//    static func save(
+//        _ objects: [Self],
+//        in database: Database,
+//        withMode mode: InsertMode = .insert
+//    ) throws
+//    {
+//        guard objects.count > 0 else {
+//            return
+//        }
+//
+//        if objects.count == 1 {
+//            try objects.first!.save(in: database, withMode: mode)
+//            return
+//        }
+//
+//        let encoder = TableEncoder.default
+//        let rows = try objects.map { try encoder.encode($0) }
+//        let stmt = InsertStatement(tableName: self.tableName, rows: rows, mode: mode)
+//        try stmt.exec(in: database)
+//    }
+//
+//    func save(in database: Database, withMode mode: InsertMode = .insert) throws {
+//        let encoder = TableEncoder.default
+//        let row = try encoder.encode(self)
+//        let stmt = InsertStatement(tableName: Self.tableName, rows: [row], mode: mode)
+//        try stmt.exec(in: database)
+//    }
+//}

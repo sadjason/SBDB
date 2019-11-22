@@ -3,7 +3,7 @@
 //  SBDBTests
 //
 //  Created by zhangwei on 2019/11/21.
-//  Copyright © 2019 zhangwei. All rights reserved.
+//  Copyright © 2019 ByteDance. All rights reserved.
 //
 
 import XCTest

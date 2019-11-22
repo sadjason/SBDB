@@ -126,7 +126,7 @@ class AtomicCommitTests: XCTestCase {
     func testWhenCommitFailed() throws {
         try Util.createStudentTable()
         let db = try! Util.openDatabase()
-        try? Student.delete(in: db)
+        try? db.delete(from: Student.self)
         
         try db.beginTransaction(withMode: .deferred)
     }
@@ -138,7 +138,7 @@ class AtomicCommitTests: XCTestCase {
     func testBeginDeferred() throws {
         DispatchQueue.global().async {
             try? Util.createDatabaseQueue().inTransaction(mode: .immediate) { (db, _) in
-                try? Util.generateStudent().save(in: db)
+                try? db.insert(Util.generateStudent())
                 Thread.sleep(forTimeInterval: 1.0)
             }
         }

@@ -17,7 +17,7 @@ class BatchWriteTests: XCTestCase {
     override func setUp() {
         try? Util.createStudentTable()
         try? Util.createDatabaseQueue().inDatabasae{ (db) in
-            try? Student.delete(in: db)
+            try? db.delete(from: Student.self)
         }
     }
 
@@ -30,7 +30,7 @@ class BatchWriteTests: XCTestCase {
         self.measure {
             try? dbQueue.inDatabasae { (db) in
                 (0..<5000).forEach { (_) in
-                    try? Util.generateStudent().save(in: db)
+                    try? db.insert(Util.generateStudent())
                 }
             }
         }
@@ -45,7 +45,7 @@ class BatchWriteTests: XCTestCase {
        self.measure {
            try? dbQueue.inTransaction(mode: .immediate, execute: { (db, rollback) in
                (0..<5000).forEach { (_) in
-                   try? Util.generateStudent().save(in: db)
+                   try? db.insert(Util.generateStudent())
                }
            })
        }
@@ -60,7 +60,7 @@ class BatchWriteTests: XCTestCase {
         self.measure {
             try? dbQueue.inTransaction(mode: .immediate, execute: { (db, rollback) in
                 (0..<5000).forEach { (_) in
-                    try? Util.generateStudent().save(in: db)
+                    try? db.insert(Util.generateStudent())
                 }
             })
         }
