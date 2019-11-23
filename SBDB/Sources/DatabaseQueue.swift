@@ -29,6 +29,12 @@ final public class DatabaseQueue {
         queue = DispatchQueue(label: "database.queue.\(UUID.init().uuidString)")
         queue.setSpecific(key: queueKey, value: queue.label)
     }
+    
+    deinit {
+        queue.sync {
+            database?.close()
+        }
+    }
 
     private func checkDatabase() throws -> Database {
         if let db = database {
@@ -63,7 +69,7 @@ final public class DatabaseQueue {
     /// - Parameter workItem: The work item to be invoked on the queue
     /// - See Also: https://www.sqlite.org/lang_transaction.html
     func inTransaction(
-        mode: TransactionMode = .deferred,
+        mode: Expr.TransactionMode = .deferred,
         execute workItem: TransactionWorkItem
     ) throws
     {

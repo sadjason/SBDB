@@ -41,12 +41,12 @@ extension DatabasePool {
         // 1. set wal mode
         // https://www.sqlite.org/wal.html
 
-        var ret: Base.RowStorage?
+        var ret: RowStorage?
         try db.exec(sql: "pragma journal_mode=wal;", withParams: nil) { (_, row, stop) in
             ret = row
             stop = true
         }
-        guard let retValue = ret?["journal_mode"]?.baseValue else {
+        guard let retValue = ret?["journal_mode"]?.columnValue else {
             throw SQLiteError.ResultError.unexpectedRow(ret)
         }
         guard let modeStr = String(from: retValue) else {
@@ -105,7 +105,7 @@ extension DatabasePool {
     /// - Parameter mode: 事务模式
     /// - Parameter workItem: 访问 database
     func write(
-        transaction mode: TransactionMode = .deferred,
+        transaction mode: Expr.TransactionMode = .deferred,
         execute workItem: DatabaseWorkItem
     ) throws {
         try writeQueue.inDatabasae(execute: workItem)

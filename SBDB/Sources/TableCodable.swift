@@ -12,6 +12,10 @@ import Foundation
 
 // MARK: - TableCodable Protocols
 
+public protocol TableCodingKeyConvertiable {
+    static func codingKey(forKeyPath keyPath: PartialKeyPath<Self>) -> CodingKey
+}
+
 public protocol CustomTableNameConvertible {
     static var tableName: String { get }
 }
@@ -30,7 +34,7 @@ public typealias TableCodable = TableEncodable & TableDecodable
 
 final public class TableEncoder {
 
-    public func encode<T: TableEncodable>(_ value: T) throws -> Base.RowStorage {
+    public func encode<T: TableEncodable>(_ value: T) throws -> RowStorage {
         let encoder = _TableEncoder()
         try value.encode(to: encoder)
         return encoder.storage
@@ -44,11 +48,15 @@ private class _TableEncoder: Encoder {
     // MARK: Encoder Protocol
 
     public var codingPath: [CodingKey] = []
-    var storage = Base.RowStorage()
+    var storage = RowStorage()
 
     public var userInfo: [CodingUserInfoKey : Any] = [:]
 
-    public func container<Key>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> where Key : CodingKey {
+    public func container<Key>(
+        keyedBy type: Key.Type
+    ) -> KeyedEncodingContainer<Key>
+        where Key : CodingKey
+    {
         let keyedContainer = KeyedContainer<Key>(encoder: self, codingPath: codingPath)
         return KeyedEncodingContainer(keyedContainer)
     }
@@ -67,7 +75,12 @@ private class _TableEncoder: Encoder {
 
         func _convert(_ key: Key) -> Key { key }
 
-        mutating func nestedContainer<NestedKey>(keyedBy keyType: NestedKey.Type, forKey key: Key) -> KeyedEncodingContainer<NestedKey> where NestedKey : CodingKey {
+        mutating func nestedContainer<NestedKey>(
+            keyedBy keyType: NestedKey.Type,
+            forKey key: Key
+        ) -> KeyedEncodingContainer<NestedKey>
+            where NestedKey : CodingKey
+        {
             fatalError("No supporting")
         }
 
@@ -90,12 +103,12 @@ private class _TableEncoder: Encoder {
 
 extension _TableEncoder.KeyedContainer {
 
-    private func _encode<T: BaseValueConvertible>(_ value: T, forKey key: Key) {
-        encoder.storage[_convert(key).stringValue] = value.baseValue
+    private func _encode<T: ColumnValueConvertible>(_ value: T, forKey key: Key) {
+        encoder.storage[_convert(key).stringValue] = value.columnValue
     }
 
     mutating func encodeNil(forKey key: Key) throws {
-        _encode(Base.null, forKey: key)
+        _encode(ColumnValue.null, forKey: key)
     }
 
     mutating func encode(_ value: Bool, forKey key: Key) throws {
@@ -155,10 +168,10 @@ extension _TableEncoder.KeyedContainer {
     }
 
     mutating func encode<T>(_ value: T, forKey key: Key) throws where T : Encodable {
-        guard let validValue = value as? BaseValueConvertible else {
+        guard let validValue = value as? ColumnValueConvertible else {
             throw EncodingError.invalidValue(value, EncodingError.Context(codingPath: codingPath, debugDescription: "invalid value"))
         }
-        _encode(validValue.baseValue, forKey: key)
+        _encode(validValue.columnValue, forKey: key)
     }
 }
 
@@ -166,8 +179,8 @@ extension _TableEncoder.KeyedContainer {
 
 extension _TableEncoder.KeyedContainer {
 
-    private func _encodeIfPresent(_ value: BaseValueConvertible?, forKey key: Key) {
-        encoder.storage[_convert(key).stringValue] = value?.baseValue ?? Base.null
+    private func _encodeIfPresent(_ value: ColumnValueConvertible?, forKey key: Key) {
+        encoder.storage[_convert(key).stringValue] = value?.columnValue ?? ColumnValue.null
     }
 
     mutating func encodeIfPresent(_ value: Bool?, forKey key: Key) throws {
@@ -227,10 +240,10 @@ extension _TableEncoder.KeyedContainer {
     }
 
     mutating func encodeIfPresent<T>(_ value: T?, forKey key: Key) throws where T : Encodable {
-        guard T.self is BaseValueConvertible.Type else {
+        guard T.self is ColumnValueConvertible.Type else {
             throw EncodingError.invalidValue(value ?? "nil", EncodingError.Context(codingPath: codingPath, debugDescription: "invalid value"))
         }
-        _encodeIfPresent(value as? BaseValueConvertible, forKey: key)
+        _encodeIfPresent(value as? ColumnValueConvertible, forKey: key)
     }
 }
 
@@ -238,7 +251,7 @@ extension _TableEncoder.KeyedContainer {
 
 public final class TableDecoder {
 
-    func decode<T>(_ type: T.Type, from storage: Base.RowStorage) throws -> T where T: TableDecodable {
+    func decode<T>(_ type: T.Type, from storage: RowStorage) throws -> T where T: TableDecodable {
         let decoder = _TableDecoder(storage: storage)
         return try T.init(from: decoder)
     }
@@ -252,9 +265,9 @@ private class _TableDecoder: Decoder {
 
     var userInfo: [CodingUserInfoKey : Any] = [:]
 
-    let storage: Base.RowStorage
+    let storage: RowStorage
 
-    init(storage: Base.RowStorage) {
+    init(storage: RowStorage) {
         self.storage = storage
     }
 
@@ -309,7 +322,12 @@ private class _TableDecoder: Decoder {
             self.decoder.storage.keys.contains(_converted(key).stringValue)
         }
 
-        func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
+        func nestedContainer<NestedKey>(
+            keyedBy type: NestedKey.Type,
+            forKey key: Key
+        ) throws -> KeyedDecodingContainer<NestedKey>
+            where NestedKey : CodingKey
+        {
             fatalError("No supporting")
         }
 
@@ -331,23 +349,23 @@ private class _TableDecoder: Decoder {
 
 extension _TableDecoder.KeyedContainer {
 
-    private func _baseValue(forKey key: Key) throws -> BaseValue {
-        guard let value = decoder.storage[_converted(key).stringValue]?.baseValue else {
+    private func _columnValue(forKey key: Key) throws -> ColumnValue {
+        guard let value = decoder.storage[_converted(key).stringValue]?.columnValue else {
             throw DecodingError.keyNotFound(key, _context(forError: keyNotFoundCode))
         }
         return value
     }
 
-    private func _decode<T: BaseValueConvertible>(_ type: T.Type, forKey key: Key) throws -> T {
-        let baseValue = try _baseValue(forKey: key)
-        guard let t = type.init(from: baseValue) else {
+    private func _decode<T: ColumnValueConvertible>(_ type: T.Type, forKey key: Key) throws -> T {
+        let columnValue = try _columnValue(forKey: key)
+        guard let t = type.init(from: columnValue) else {
             throw DecodingError.typeMismatch(T.self, _context(forError: typeMismatchCode))
         }
         return t
     }
 
     func decodeNil(forKey key: Key) throws -> Bool {
-        let _ = try _decode(Base.Null.self, forKey: key)
+        let _ = try _decode(ColumnNull.self, forKey: key)
         return true
     }
 
@@ -408,12 +426,12 @@ extension _TableDecoder.KeyedContainer {
     }
 
     func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
-        guard let validType = type.self as? BaseValueConvertible.Type else {
+        guard let validType = type.self as? ColumnValueConvertible.Type else {
             throw DecodingError.typeMismatch(type.self, _context(forError: typeMismatchCode))
         }
 
-        let baseValue = try _baseValue(forKey: key)
-        guard let ret = validType.init(from: baseValue) else {
+        let columnValue = try _columnValue(forKey: key)
+        guard let ret = validType.init(from: columnValue) else {
             throw DecodingError.typeMismatch(type.self, _context(forError: typeMismatchCode))
         }
         return ret as! T
@@ -424,12 +442,12 @@ extension _TableDecoder.KeyedContainer {
 
 extension _TableDecoder.KeyedContainer {
 
-    private func _decodeIfPresent<T: BaseValueConvertible>(_ type: T.Type, forKey key: Key) throws -> T? {
-        let baseValue = try _baseValue(forKey: key)
-        if let t = type.init(from: baseValue) {
+    private func _decodeIfPresent<T: ColumnValueConvertible>(_ type: T.Type, forKey key: Key) throws -> T? {
+        let columnValue = try _columnValue(forKey: key)
+        if let t = type.init(from: columnValue) {
             return t
         }
-        if case .null = baseValue.storage {
+        if case .null = columnValue.storage {
             return nil
         }
         // TODO: 可能需要加配置，即配置类型匹配失败的处理逻辑：返回 nil 或者抛出错误
@@ -493,15 +511,15 @@ extension _TableDecoder.KeyedContainer {
     }
 
     func decodeIfPresent<T>(_ type: T.Type, forKey key: Key) throws -> T? where T : Decodable {
-        guard let validType = type.self as? BaseValueConvertible.Type else {
+        guard let validType = type.self as? ColumnValueConvertible.Type else {
             throw DecodingError.typeMismatch(type.self, _context(forError: typeMismatchCode))
         }
 
-        let baseValue = try _baseValue(forKey: key)
-        if let ret = validType.init(from: baseValue) {
+        let columnValue = try _columnValue(forKey: key)
+        if let ret = validType.init(from: columnValue) {
             return (ret as! T)
         }
-        if case .null = baseValue.storage {
+        if case .null = columnValue.storage {
             return nil
         }
         throw DecodingError.typeMismatch(type.self, _context(forError: typeMismatchCode))

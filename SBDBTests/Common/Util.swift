@@ -39,12 +39,12 @@ enum Util {
     public static func setJournalMode(_ mode: String, for queue: DatabaseQueue) throws {
         var modeStr = "unknown"
         try queue.inDatabasae { (db) in
-            var ret: Base.RowStorage?
+            var ret: RowStorage?
             try? db.exec(sql: "pragma journal_mode=\(mode);", withParams: nil) { (_, row, stop) in
                 ret = row
                 stop = true
             }
-            guard let retValue = ret?["journal_mode"]?.baseValue else {
+            guard let retValue = ret?["journal_mode"]?.columnValue else {
                 return
             }
             guard let mode = String(from: retValue) else {
@@ -58,24 +58,24 @@ enum Util {
     }
     
     public static func journalMode(of db: Database) -> String {
-        var ret: Base.RowStorage?
+        var ret: RowStorage?
         try? db.exec(sql: "pragma journal_mode", withParams: nil) { (_, row, stop) in
             ret = row
             stop = true
         }
-        guard let retValue = ret?["journal_mode"]?.baseValue else {
+        guard let retValue = ret?["journal_mode"]?.columnValue else {
             return ""
         }
         return String(from: retValue) ?? ""
     }
     
     public static func setJournalMode(_ mode: String, for database: Database) throws {
-        var ret: Base.RowStorage?
+        var ret: RowStorage?
         try? database.exec(sql: "pragma journal_mode=\(mode);", withParams: nil) { (_, row, stop) in
             ret = row
             stop = true
         }
-        guard let retValue = ret?["journal_mode"]?.baseValue else {
+        guard let retValue = ret?["journal_mode"]?.columnValue else {
             throw SQLiteError.SetUpError.setWalModeFailed
         }
         guard let modeStr = String(from: retValue) else {

@@ -66,7 +66,7 @@ class SelectTests: XCTestCase {
         }
 
         // 逆序
-        let result2 = try database.select(from: Student.self, orderBy: (\Student.age).desc())
+        let result2 = try database.select(from: Student.self, orderBy: Expr.desc(\Student.age))
         XCTAssert(result2.count == students.count)
         students.enumerated().forEach { (index, r) in
             XCTAssert(result2[students.count - 1 - index] == r)

@@ -21,7 +21,7 @@ struct Student: TableCodable, Equatable {
 }
 
 extension Student: TableCodingKeyConvertiable {
-    static func codingKey(of keyPath: PartialKeyPath<Student>) -> CodingKey {
+    static func codingKey(forKeyPath keyPath: PartialKeyPath<Student>) -> CodingKey {
         switch keyPath {
         case \Student.name: return CodingKeys.name
         case \Student.age: return CodingKeys.age

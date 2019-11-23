@@ -169,7 +169,7 @@ class UpdateTests: XCTestCase {
         
         try db.update(Student.self, where: \Student.age == 50) { assign in
             assign(\Student.married, !specialOne.married)
-            assign(\Student.extra, Base.null)
+            assign(\Student.extra, ColumnValue.null)
             assign(\Student.gpa, specialOne.gpa + 0.1)
         }
         

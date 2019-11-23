@@ -9,7 +9,10 @@
 import Foundation
 import SQLite3
 
-/// https://www.sqlite.org/c3ref/stmt.html
+/// https://www.sqlite.org/c3ref/c_abort.html
+typealias SQLiteCode = Int32
+
+/// - See Also: https://www.sqlite.org/c3ref/stmt.html
 final class _RawStatement {
 
     private let sql: String
@@ -19,7 +22,7 @@ final class _RawStatement {
     init(sql: String, database: OpaquePointer) throws {
 
         /// prepare:
-        /// https://www.sqlite.org/c3ref/prepare.html
+        /// - See Also: https://www.sqlite.org/c3ref/prepare.html
         var pStmt: OpaquePointer? = nil
         let ret = sqlite3_prepare_v2(database, sql, Int32(sql.utf8.count), &pStmt, nil)
         guard ret == SQLITE_OK else {
@@ -34,7 +37,7 @@ final class _RawStatement {
         self.stmtPointer = stmt
     }
     
-    /// https://www.sqlite.org/c3ref/finalize.html
+    /// - See Also: https://www.sqlite.org/c3ref/finalize.html
     // 需要手动 finalize，不能靠析构，否则存在线程问题：
     // [logging] BUG IN CLIENT OF libsqlite3.dylib: illegal multi-threaded access to database connection
     func finalize() {
@@ -42,13 +45,13 @@ final class _RawStatement {
         sqlite3_finalize(stmtPointer)
     }
 
-    /// https://www.sqlite.org/c3ref/step.html
+    /// - See Also: https://www.sqlite.org/c3ref/step.html
     @discardableResult
     func step() -> SQLiteCode {
         sqlite3_step(stmtPointer)
     }
 
-    /// https://www.sqlite.org/c3ref/reset.html
+    /// - See Also: https://www.sqlite.org/c3ref/reset.html
     @discardableResult
     func reset() -> SQLiteCode {
         sqlite3_reset(stmtPointer)
@@ -61,8 +64,8 @@ let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 extension _RawStatement {
 
-    /// https://www.sqlite.org/c3ref/bind_blob.html
-    func bind(_ value: BaseValue, to index: Base.ColumnIndex) throws {
+    /// - See Also: https://www.sqlite.org/c3ref/bind_blob.html
+    func bind(_ value: ColumnValue, to index: ColumnIndex) throws {
         let ret: Int32
         switch value.storage {
         case .integer(let num):
@@ -86,11 +89,11 @@ extension _RawStatement {
 
 // MARK: Return Result
 
-/// https://www.sqlite.org/c3ref/column_blob.html
+/// - See Also: https://www.sqlite.org/c3ref/column_blob.html
 extension _RawStatement {
 
-    /// https://www.sqlite.org/c3ref/column_blob.html
-    private func _columnValue(at index: Base.ColumnIndex) throws -> BaseValueConvertible {
+    /// - See Also: https://www.sqlite.org/c3ref/column_blob.html
+    private func _columnValue(at index: ColumnIndex) throws -> ColumnValueConvertible {
         let type = sqlite3_column_type(stmtPointer, index)
         switch type {
         case SQLITE_INTEGER: return Int64(sqlite3_column_int64(stmtPointer, index))
@@ -103,7 +106,7 @@ extension _RawStatement {
                 return Data()
             }
         case SQLITE_TEXT: return String(cString:sqlite3_column_text(stmtPointer, index))
-        case SQLITE_NULL: return Base.null
+        case SQLITE_NULL: return ColumnValue.null
         default: throw SQLiteError.ResultError.unknownType(type)
         }
     }
@@ -113,20 +116,20 @@ extension _RawStatement {
         Int(sqlite3_column_count(stmtPointer))
     }
 
-    func readRow() -> Base.RowStorage {
+    func readRow() -> RowStorage {
         let colCount = columnCount()
         guard colCount > 0 else {
             return [:]
         }
-        var storage = Base.RowStorage()
+        var storage = RowStorage()
         (0..<colCount).forEach { (index) in
             let colName = String(cString: sqlite3_column_name(stmtPointer, Int32(index)))
-            let colValue: BaseValueConvertible
+            let colValue: ColumnValueConvertible
             do {
                 colValue = try _columnValue(at: Int32(index))
             } catch {
                 print("readRow failed: \(error)")
-                colValue = Base.null
+                colValue = ColumnValue.null
             }
             storage[colName] = colValue
         }
@@ -149,9 +152,7 @@ public class Database: Identifiable {
     
     static let stepSucceedCodes: Set<SQLiteCode> = [SQLITE_OK, SQLITE_DONE, SQLITE_ROW]
 
-    /// TODO: 暂时不支持 tempory 数据库的建立
-
-    // https://www.sqlite.org/c3ref/open.html
+    /// - See Also: https://www.sqlite.org/c3ref/open.html
     init(path: String, options: OpenOptions? = nil) throws {
         let ret = options != nil ? sqlite3_open_v2(path, &pointer, options!.rawValue, nil) : sqlite3_open(path, &pointer)
         guard ret == SQLITE_OK else {
@@ -159,11 +160,6 @@ public class Database: Identifiable {
             sqlite3_close(pointer)
             throw SQLiteError.SetUpError.openFailed
         }
-        // print("database is opened successfully, path: \(path)")
-    }
-    
-    deinit {
-        sqlite3_close(pointer)
     }
     
     func close() {
@@ -190,7 +186,7 @@ public class Database: Identifiable {
     
     private func _exec(
         sql: String,
-        withParams params: [BaseValueConvertible]?,
+        withParams params: [ColumnValueConvertible]?,
         forEach rowIterator: RowIterator?
     ) throws
     {
@@ -217,7 +213,7 @@ public class Database: Identifiable {
         
         do {
             try params?.enumerated().forEach { (index, param) in
-                try stmt.bind(param.baseValue, to: Base.ColumnIndex(index + 1))
+                try stmt.bind(param.columnValue, to: ColumnIndex(index + 1))
             }
         } catch {
             throw SQLiteError.ExecuteError.bindParamFailed(lastErrorMessage, lastErrorCode)
@@ -241,7 +237,7 @@ public class Database: Identifiable {
         }
     }
 
-    func exec(sql: String, withParams params: [BaseValueConvertible]?) throws {
+    func exec(sql: String, withParams params: [ColumnValueConvertible]?) throws {
         try _exec(sql: sql, withParams: params, forEach: nil)
     }
 
@@ -250,11 +246,11 @@ public class Database: Identifiable {
     /// - Parameter .0: index, starting from `0`
     /// - Parameter .1: row
     /// - Parameter .2: 指示是否结束遍历 
-    public typealias RowIterator = (Int, Base.RowStorage, inout Bool) -> Void
+    public typealias RowIterator = (Int, RowStorage, inout Bool) -> Void
 
     func exec(
         sql: String,
-        withParams params: [BaseValueConvertible]?,
+        withParams params: [ColumnValueConvertible]?,
         forEach rowIterator: @escaping RowIterator
     ) throws {
         try _exec(sql: sql, withParams: params, forEach: rowIterator)
@@ -300,7 +296,7 @@ extension Database {
 
 extension Database {
 
-    func _beginTransaction(withMode mode: Base.TransactionMode = .deferred) throws {
+    func _beginTransaction(withMode mode: Expr.TransactionMode = .deferred) throws {
         do {
             try exec(sql: "begin \(mode.sql) transaction", withParams: nil)
         } catch {
@@ -324,7 +320,7 @@ extension Database {
         }
     }
     
-    public func beginTransaction(withMode mode: Base.TransactionMode = .deferred) throws {
+    public func beginTransaction(withMode mode: Expr.TransactionMode = .deferred) throws {
         if inExplicitTransaction { // 避免 transaction 嵌套
             return
         }
@@ -394,6 +390,9 @@ extension Database {
 
 // MARK: Typealias
 
+public typealias ColumnName = String
+public typealias ColumnIndex = Int32
+public typealias RowStorage = Dictionary<ColumnName, ColumnValueConvertible>
 public typealias RowIterator = Database.RowIterator
 public typealias OpenOptions = Database.OpenOptions
 
@@ -402,4 +401,3 @@ typealias DatabaseWorkItem = (Database) throws -> Void
 /// About transaction
 typealias Rollback = () -> Void
 typealias TransactionWorkItem = (Database, Rollback) throws -> Void
-typealias TransactionMode = Base.TransactionMode

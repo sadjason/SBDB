@@ -30,8 +30,8 @@ public enum SQLiteError: Error {
 
     public enum ResultError: Error {
         case unknownType(Int32)
-        case unexpectedRow(Base.RowStorage?)
-        case unexpectedValue(BaseValueConvertible?)
+        case unexpectedRow(RowStorage?)
+        case unexpectedValue(ColumnValueConvertible?)
     }
 
     public enum SetUpError: Error {

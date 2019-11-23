@@ -19,84 +19,124 @@ let path = "\(userDir)/tests.sqlite3"
 let db = try Database(path: path) // or Database(path: path, options: [.readwrite, .create, .noMutex])
 ```
 
+### 支持 ORM
+
+```swift
+// 会话
+struct Conversation {
+    var id: String      // 会话 ID
+    var name: String    // 会话名
+}
+
+extension Conversation:  { }
+
+/// 成员
+struct Participant: TableCodable {
+    var userId: String  // 用户 ID
+    var convId: String  // 会话 ID
+    var name: String    // 成员名
+    var age: Int        // 年龄
+}
+
+```
+
+如果实现了 `TableCodingKeyConvertiable` 协议，还可以支持更多基于 KeyPath 的操作：
+
+```swift
+struct Conversation: TableCodingKeyConvertiable {
+    static func codingKey(for keyPath: PartialKeyPath<Self>) -> CodingKey {
+        switch keyPath {
+        case \Self.id: return CodingKeys.id
+        case \Self.name: return CodingKeys.name
+        default: fatalError()
+        }
+    }
+}
+
+struct Participant: TableCodingKeyConvertiable { ... }
+```
+
 ### Creating & Droping Table 
 
 ```swift
-struct Student {
-    var name: String
-    var age: UInt8
-    var address: String?
-    var grade: Int?
-    var married: Bool
-    var isBoy: Bool?
-    var gpa: Float
-    var extra: Data?
+// create table
+try db.createTable(Conversation.self)
+
+try db.createTable(Conversation.self, options: .ifNotExists) { tb in
+    // set primary: single comumn
+    tb.column(forKeyPath: \Conversation.id)?.primaryKey().unique()
+    // set not null
+    tb.column(forKeyPath: \Conversation.name)?.notNull()
 }
 
-extension Student: TableCodable { }
-
-// create table
-try db.createTable(Student.self)
-// create table if not exists
-try db.createTable(Student.self, options: .ifNotExists)
+try db.createTable(Participant.self, options: .ifNotExists) { tb in
+    // set primary: multiple column
+    tb.setPrimaryKey(withKeyPath: \Participant.userId, \Participant.convId)
+}
 
 // drop table
-try db.dropTable(Student.self)
+try db.dropTable(Conversation.self)
+try db.dropTable(Participant.self, ifExists: true)
 ```
 
 ### Inserting
 
 ```swift
 // 单条插入
-try db.insert(generateStudent())
+let conv = buildConversation(name: "conv_0")
+try db.insert(conv)
 
 // 批量插入
-try db.insert((0..<100).map { generateStudent() })
+try db.insert((1...100).map { index in buildParticipant(name: "name_\(index)", age: index, convId: conv.id) })
 ```
 
 ### Deleting
 
 ```swift
 // 全删
-try db.delete(from: Student.self)
+try db.delete(from: Conversation.self)
 
 // 条件删
-try db.delete(from: Student.self, where: Column("age") < 18)
-```
+try db.delete(from: Participant.self, where: Column("age") < 18)
 
-如果 `Student` 实现了 `KeyPathToColumnNameConvertiable` 协议，还可以基于 KeyPath 实现更高级的操作：
+/* 基于 keyPath 条件删 */
 
-```swift
-extension Student: KeyPathToColumnNameConvertiable {
-    static func columnName(of keyPath: PartialKeyPath<Student>) -> String? {
-        switch keyPath {
-        case \Student.name: return "name"
-        case \Student.age: return "age"
-        case \Student.address: return "address"
-        case \Student.grade: return "grade"
-        case \Student.married: return "married"
-        case \Student.isBoy: return "isBoy"
-        case \Student.gpa: return "gpa"
-        case \Student.extra: return "extra"
-        default: return nil
-        }
-    }
-}
-```
-
-```swift
-// 条件删
-try db.delete(from: Student.self, where: \Student.name < 18)
+// >=
+try db.delete(from: Participant.self, where: \Participant.age >= 80)
+// in
+try db.delete(from: Participant.self, where: (\Participant.age).in([32, 19]))
+// between and
+try db.delete(from: Participant.self, where: (\Participant.age).between(65, and: 70))
+// isNull
+try db.delete(from: Participant.self, where: (\Participant.age).isNull())
+// cond1 && cond2
+try db.delete(from: Participant.self, where: \Participant.age >= 80 && \Participant.age < 18)
 ```
 
 ### Updating
 
 ```swift
-try db.update(Student.self, where: \Student.name == "the one") { assign in
-    assign(\Student.married, false)
-    assign(\Student.extra, Base.null)
-    assign(\Student.gpa, 4.0)
+try db.update(Participant.self, where: \Participant.name == "name_42"){ assign in
+    assign(\Participant.age, "24")
 }
+```
+
+### Selecting
+
+```swift
+// select all
+_ = try db.select(from: Participant.self)
+_ = try db.select(from: Participant.self, where: \Participant.age >= 30)
+_ = try db.select(from: Participant.self, where: \Participant.age >= 60, orderBy: \Participant.age)
+_ = try db.select(from: Participant.self, where: \Participant.age >= 60, orderBy: Expr.desc(\Participant.age))
+_ = try db.select(from: Participant.self, where: \Participant.age >= 50 && \Participant.age <= 60, orderBy: Expr.desc(\Participant.age))
+
+// select one
+_ = try db.select(from: Participant.self)
+_ = try db.select(from: Participant.self, where: \Participant.age >= 30)
+_ = try db.select(from: Participant.self, where: \Participant.age >= 60, orderBy: \Participant.age)
+_ = try db.select(from: Participant.self, where: \Participant.age >= 60, orderBy: Expr.desc(\Participant.age))
+_ = try db.selectColumns(from: Participant.self, on: [.aggregate(.countAll, nil)], where: \Participant.age >= 50 && \Participant.age <= 60)
 ```
 
 ### DatabaseQueue
@@ -108,7 +148,7 @@ let queue = DatabaseQueue(path: path)
 
 try? dbQueue.inTransaction(mode: .immediate, execute: { (db, rollback) in
     (0..<5000).forEach { (_) in
-        try? generateStudent().save(in: db)
+        try? buildConversation().save(in: db)
     }
 })
 ```

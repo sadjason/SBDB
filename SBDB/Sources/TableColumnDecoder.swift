@@ -8,12 +8,11 @@
 
 import Foundation
 
-// 提取 Table 的 column 信息
-// 参考 https://github.com/PerfectlySoft/Perfect-CRUD/blob/master/Sources/PerfectCRUD/Coding/CodingNames.swift#L265
+/// 用于从 Codable type 中根据 CodingKey 信息
 
 struct _TableColumnStructure {
     var name: String
-    var type: Base.AffinityType
+    var type: Expr.AffinityType
     var nonnull: Bool
 }
 
@@ -87,7 +86,7 @@ private class _TableColumnDecoder: Decoder {
             fatalError("No supporting")
         }
         
-        private func _appendKey(_ key: Key, _ type: Base.AffinityType, _ nonnull: Bool) {
+        private func _appendKey(_ key: Key, _ type: Expr.AffinityType, _ nonnull: Bool) {
             decoder.container[key.stringValue] = _TableColumnStructure(name: key.stringValue,
                                                                        type: type,
                                                                        nonnull: nonnull)
@@ -101,10 +100,9 @@ extension _TableColumnDecoder.KeyedContainer {
     
     func _advance1<T: ColumnConvertiable>(_ key: Key, _ type: T.Type) -> T {
         _appendKey(key, type.columnType, true)
-        return try! type.init(withNull: Base.null)
+        return try! type.init(forColumnDecoding: key)
     }
 
-    // TODO: 什么情况下会调用 `decodeNil(forKey:)`
     func decodeNil(forKey key: Key) throws -> Bool {
         _appendKey(key, .blob, true)
         return true
@@ -143,7 +141,7 @@ extension _TableColumnDecoder.KeyedContainer {
             throw SQLiteError.ColumnConvertError.cannotConvertFromNull
         }
         _appendKey(key, validType.columnType, true)
-        return try validType.init(withNull: Base.null) as! T
+        return try validType.init(forColumnDecoding: key) as! T
     }
 }
 
