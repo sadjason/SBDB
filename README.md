@@ -28,7 +28,7 @@ struct Conversation {
     var name: String    // 会话名
 }
 
-extension Conversation:  { }
+extension Conversation: TableCodable { }
 
 /// 成员
 struct Participant: TableCodable {
@@ -44,7 +44,7 @@ struct Participant: TableCodable {
 
 ```swift
 struct Conversation: TableCodingKeyConvertiable {
-    static func codingKey(for keyPath: PartialKeyPath<Self>) -> CodingKey {
+    static func codingKey(forKeyPath keyPath: PartialKeyPath<Self>) -> CodingKey {
         switch keyPath {
         case \Self.id: return CodingKeys.id
         case \Self.name: return CodingKeys.name
@@ -61,16 +61,15 @@ struct Participant: TableCodingKeyConvertiable { ... }
 ```swift
 // create table
 try db.createTable(Conversation.self)
-
 try db.createTable(Conversation.self, options: .ifNotExists) { tb in
-    // set primary: single comumn
+    // set primaryKey: single comumn
+    // set unique
     tb.column(forKeyPath: \Conversation.id)?.primaryKey().unique()
-    // set not null
+    // set notNull
     tb.column(forKeyPath: \Conversation.name)?.notNull()
 }
-
 try db.createTable(Participant.self, options: .ifNotExists) { tb in
-    // set primary: multiple column
+    // set primaryKey: multiple columns
     tb.setPrimaryKey(withKeyPath: \Participant.userId, \Participant.convId)
 }
 
@@ -99,18 +98,18 @@ try db.delete(from: Conversation.self)
 // 条件删
 try db.delete(from: Participant.self, where: Column("age") < 18)
 
-/* 基于 keyPath 条件删 */
-
+// 基于 keyPath 条件删
+let age = \Participant.age
 // >=
-try db.delete(from: Participant.self, where: \Participant.age >= 80)
+try db.delete(from: Participant.self, where: age >= 80)
 // in
-try db.delete(from: Participant.self, where: (\Participant.age).in([32, 19]))
+try db.delete(from: Participant.self, where: age.in([32, 19]))
 // between and
-try db.delete(from: Participant.self, where: (\Participant.age).between(65, and: 70))
+try db.delete(from: Participant.self, where: age.between(65, and: 70))
 // isNull
-try db.delete(from: Participant.self, where: (\Participant.age).isNull())
+try db.delete(from: Participant.self, where: age.isNull())
 // cond1 && cond2
-try db.delete(from: Participant.self, where: \Participant.age >= 80 && \Participant.age < 18)
+try db.delete(from: Participant.self, where: age <= 60 && age >= 18)
 ```
 
 ### Updating
@@ -124,19 +123,22 @@ try db.update(Participant.self, where: \Participant.name == "name_42"){ assign i
 ### Selecting
 
 ```swift
+let age = \Participant.age
 // select all
 _ = try db.select(from: Participant.self)
-_ = try db.select(from: Participant.self, where: \Participant.age >= 30)
-_ = try db.select(from: Participant.self, where: \Participant.age >= 60, orderBy: \Participant.age)
-_ = try db.select(from: Participant.self, where: \Participant.age >= 60, orderBy: Expr.desc(\Participant.age))
-_ = try db.select(from: Participant.self, where: \Participant.age >= 50 && \Participant.age <= 60, orderBy: Expr.desc(\Participant.age))
+_ = try db.select(from: Participant.self, where: age >= 30)
+_ = try db.select(from: Participant.self, where: age >= 60, orderBy: age)
+_ = try db.select(from: Participant.self, where: age >= 60, orderBy: Expr.desc(age))
+_ = try db.select(from: Participant.self, where: age >= 50 && age <= 60, orderBy: age)
 
 // select one
-_ = try db.select(from: Participant.self)
-_ = try db.select(from: Participant.self, where: \Participant.age >= 30)
-_ = try db.select(from: Participant.self, where: \Participant.age >= 60, orderBy: \Participant.age)
-_ = try db.select(from: Participant.self, where: \Participant.age >= 60, orderBy: Expr.desc(\Participant.age))
-_ = try db.selectColumns(from: Participant.self, on: [.aggregate(.countAll, nil)], where: \Participant.age >= 50 && \Participant.age <= 60)
+_ = try db.selectOne(from: Participant.self)
+_ = try db.selectOne(from: Participant.self, where: age >= 30)
+_ = try db.selectOne(from: Participant.self, where: age >= 60, orderBy: age)
+_ = try db.selectOne(from: Participant.self, where: age >= 60, orderBy: Expr.desc(age))
+
+// select specify columns
+_ = try db.selectColumns(from: Participant.self, on: [.aggregate(.countAll, nil)], where: age >= 50 && age <= 60)
 ```
 
 ### DatabaseQueue
