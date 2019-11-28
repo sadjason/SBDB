@@ -19,7 +19,8 @@ extension PartialKeyPath where Root: TableCodingKeyConvertiable {
     }
 }
 
-/// Support Condition
+// MARK: Condition
+
 extension PartialKeyPath where Root: TableCodingKeyConvertiable {
     
     public static func > (keyPath: PartialKeyPath, value: ColumnValueConvertible) -> Expr.Condition {
@@ -71,19 +72,14 @@ extension PartialKeyPath where Root: TableCodingKeyConvertiable {
     }
 }
 
-extension Expr {
-    
-    public static func asc<Root>(_ keyPath: PartialKeyPath<Root>)
-        -> Expr.OrderTerm
-        where Root: TableCodingKeyConvertiable
-    {
-        Expr.OrderTerm(column: keyPath.stringValue, strategy: .asc)
-    }
-    
-    public static func desc<Root>(_ keyPath: PartialKeyPath<Root>)
-        -> Expr.OrderTerm
-        where Root: TableCodingKeyConvertiable
-    {
-        Expr.OrderTerm(column: keyPath.stringValue, strategy: .desc)
-    }
+// MARK: Select Term
+
+extension PartialKeyPath: SelectTermConvertiable where Root: TableCodingKeyConvertiable {
+    public func asSelect() -> Expr.Column { Expr.Column(stringValue) }
+}
+
+// MARK: Order Term
+
+extension PartialKeyPath: OrderTermConvertiable where Root: TableCodingKeyConvertiable {
+    public func asOrder() -> Expr.OrderTerm { Expr.Column(stringValue).asOrder() }
 }

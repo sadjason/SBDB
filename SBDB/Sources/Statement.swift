@@ -486,30 +486,6 @@ extension Stmt {
     ///
     /// - See Also: https://www.sqlite.org/lang_select.html
     public struct Select: Statement {
-        
-        public enum ResultColumn: Expression {
-            public typealias Alias = String
-
-            case all
-            case normal(Expr.Column)
-            case normalAs(Expr.Column, Alias)
-            case aggregate(Expr.AggregateFunction)
-            case aggregateAs(Expr.AggregateFunction, Alias)
-
-            var sql: String {
-                switch self {
-                case .all: return "*"
-                case let .normal(col):
-                    return col.sql
-                case let .normalAs(col, alias):
-                    return "\(col.sql) as \(alias)"
-                case let .aggregate(fun):
-                    return "\(fun.sql)"
-                case let .aggregateAs(fun, alias):
-                    return "\(fun.sql) as \(alias)"
-                }
-            }
-        }
 
         public enum Mode: String, Expression {
             case distinct
@@ -517,15 +493,15 @@ extension Stmt {
         }
 
         let tableName: String
-        let resultColumns: [ResultColumn]
+        let resultColumns: [SelectTermConvertiable]
         var groupColumns: [Expr.Column]? = nil
-        var orderTerms: [Expr.OrderTerm]?
+        var orderTerms: [OrderTermConvertiable]?
         var whereCondtion: Expr.Condition?
         var limit: Int?
         var offset: Int?
         var mode: Mode?
 
-        init(from tableName: String, on columns: [ResultColumn]) {
+        init(from tableName: String, on columns: [SelectTermConvertiable]) {
             self.tableName = tableName
             self.resultColumns = columns
         }
@@ -536,11 +512,12 @@ extension Stmt {
 extension Stmt.Select {
     
     var sql: String {
+        
         var chunk = "select"
         if let mode = mode {
             chunk += " \(mode.sql)"
         }
-        chunk += " \(resultColumns.map { $0.sql }.joined(separator: ","))"
+        chunk += " \(resultColumns.map { $0.asSelect().sql }.joined(separator: ","))"
         chunk += " from \(tableName)"
         if let cond = whereCondtion {
             chunk += " where \(cond.sql)"
@@ -549,7 +526,7 @@ extension Stmt.Select {
             chunk += " group by \(group.map { $0.sql }.joined(separator: ","))"
         }
         if let orderTerms = orderTerms, orderTerms.count > 0 {
-            chunk += " order by \(orderTerms.map { $0.sql }.joined(separator: ","))"
+            chunk += " order by \(orderTerms.map { $0.asOrder().sql }.joined(separator: ","))"
         }
         if let limit = limit {
             chunk += " limit \(limit)"
@@ -563,6 +540,11 @@ extension Stmt.Select {
     var params: [ColumnValueConvertible]? { whereCondtion?.params }
 }
 
+extension Expr.Column {
+    
+    static var all = Expr.Column("*")
+}
+
 public typealias CreateTableColumn = Expr.IndexedColumn
 public typealias CreateTableConstraint = Stmt.CreateTable.Constraint
 public typealias CreateTableOptions = Stmt.CreateTable.Options
@@ -570,7 +552,6 @@ public typealias CreateTableOptions = Stmt.CreateTable.Options
 public typealias CreateIndexOptions = Stmt.CreateIndex.Options
 
 public typealias SelectMode = Stmt.Select.Mode
-public typealias SelectColumn = Stmt.Select.ResultColumn
 
 public typealias InsertMode = Stmt.Insert.Mode
 

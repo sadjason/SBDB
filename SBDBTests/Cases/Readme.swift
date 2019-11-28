@@ -75,14 +75,20 @@ class Readme: XCTestCase {
     func testSelecting() throws {
         let db = try Util.openDatabase()
         
-//        _ = try db.select(from: Participant.self)
-//        _ = try db.select(from: Participant.self, where: \Participant.age >= 30)
-//        _ = try db.select(from: Participant.self, where: \Participant.age >= 60, orderBy: \Participant.age)
-//        print(try db.select(from: Participant.self, where: \Participant.age >= 60, orderBy: Expr.desc(\Participant.age)))
-        print(try db.select(from: Participant.self, where: \Participant.age >= 50 && \Participant.age <= 60, orderBy: Expr.desc(\Participant.age)))
-        print(try db.selectColumns(from: Participant.self, on: [.aggregate(.countAll, nil)], where: \Participant.age >= 50 && \Participant.age <= 60))
+        let (age, name, userId, convId) = (\Participant.age, \Participant.name, \Participant.userId, \Participant.convId)
         
-//        print(try db.selectOne(from: Participant.self))
+//        print(try db.select(from: Participant.self))
+//        print(try db.select(from: Participant.self, where: age >= 30))
+//        print(try db.select(from: Participant.self, where: age >= 60, orderBy: age))
+//        print(try db.select(from: Participant.self, where: age >= 60, orderBy: age.desc()))
+//        print(try db.select(from: Participant.self, where: age >= 60 && age <= 70, orderBy: age))
+        
+        // print(try db.selectOne(from: Participant.self, orderBy: age.desc()))
+        // print(try db.selectOneColumn(from: Participant.self, on: Expr.Column.all, where: age >= 18 && age <= 60).count)
+        // print(try db.selectColumns(from: Participant.self, on: Expr.Column.all, where: age >= 18 && age <= 60).count)
+        // print(try db.selectColumns(from: Participant.self, on: [name, age], where: convId == "conv_0"))
+        // print(try db.selectOneColumn(from: Participant.self, on: convId.count(), where: convId == "conv_0"))
+        // print(try db.selectOneColumn(from: Participant.self, on: age.min()))
 //        print(try db.selectOne(from: Participant.self, where: \Participant.age >= 30))
 //        print(try db.selectOne(from: Participant.self, where: \Participant.age >= 30, orderBy: [Expr.desc(\Participant.age)]))
     }

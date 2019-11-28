@@ -34,7 +34,7 @@ extension Conversation: TableCodable { }
 struct Participant: TableCodable {
     var userId: String  // 用户 ID
     var convId: String  // 会话 ID
-    var name: String    // 成员名
+    var name: String    // 姓名
     var age: Int        // 年龄
 }
 
@@ -123,22 +123,29 @@ try db.update(Participant.self, where: \Participant.name == "name_42"){ assign i
 ### Selecting
 
 ```swift
-let age = \Participant.age
+let (age, name, convId) = (\Participant.age, \Participant.name, \Participant.convId)
+
 // select all
 _ = try db.select(from: Participant.self)
 _ = try db.select(from: Participant.self, where: age >= 30)
 _ = try db.select(from: Participant.self, where: age >= 60, orderBy: age)
-_ = try db.select(from: Participant.self, where: age >= 60, orderBy: Expr.desc(age))
+_ = try db.select(from: Participant.self, where: age >= 60, orderBy: age.desc())
 _ = try db.select(from: Participant.self, where: age >= 50 && age <= 60, orderBy: age)
 
 // select one
 _ = try db.selectOne(from: Participant.self)
 _ = try db.selectOne(from: Participant.self, where: age >= 30)
 _ = try db.selectOne(from: Participant.self, where: age >= 60, orderBy: age)
-_ = try db.selectOne(from: Participant.self, where: age >= 60, orderBy: Expr.desc(age))
+_ = try db.selectOne(from: Participant.self, where: age >= 60, orderBy: age.desc())
 
 // select specify columns
-_ = try db.selectColumns(from: Participant.self, on: [.aggregate(.countAll, nil)], where: age >= 50 && age <= 60)
+_ = try db.selectColumns(from: Participant.self, on: [name, age], where: convId == conv.id)
+
+// select with aggregate
+_ = try db.selectOneColumn(from: Participant.self, on: age.sum())
+_ = try db.selectOneColumn(from: Participant.self, on: name.count(), where: convId == conv.id && age >= 18)
+_ = try db.selectOneColumn(from: Participant.self, on: age.max())
+_ = try db.selectOneColumn(from: Participant.self, on: age.min())
 ```
 
 ### DatabaseQueue

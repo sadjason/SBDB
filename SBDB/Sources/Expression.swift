@@ -54,6 +54,57 @@ extension ParameterExpression {
     }
 }
 
+// MARK: - Term Protocols
+
+public protocol SelectTermConvertiable {
+    func asSelect() -> Expr.Column
+}
+
+extension SelectTermConvertiable {
+    
+    public func `as`(alias: String) -> Expr.Column { Expr.Column("\(asSelect().sql) as \(alias)") }
+    
+    /// Aggregate Function
+    /// 
+    /// - See Also: https://www.sqlite.org/lang_aggfunc.html
+    public func max() -> Expr.Column { Expr.Column("max(\(asSelect().sql))") }
+    public func min() -> Expr.Column { Expr.Column("min(\(asSelect().sql))") }
+    public func count() -> Expr.Column { Expr.Column("count(\(asSelect().sql))") }
+    public func total() -> Expr.Column { Expr.Column("total(\(asSelect().sql))") }
+    public func sum() -> Expr.Column { Expr.Column("sum(\(asSelect().sql))") }
+}
+
+public protocol OrderTermConvertiable {
+    func asOrder() -> Expr.OrderTerm
+}
+
+extension OrderTermConvertiable {
+    
+    public func nullsFirst() -> Expr.OrderTerm {
+        var cur = asOrder()
+        cur.nullsFirst()
+        return cur
+    }
+    
+    public func nullsLast() -> Expr.OrderTerm {
+        var cur = asOrder()
+        cur.nullsLast()
+        return cur
+    }
+    
+    public func asc() -> Expr.OrderTerm {
+        var cur = asOrder()
+        cur.asc()
+        return cur
+    }
+    
+    public func desc() -> Expr.OrderTerm {
+        var cur = asOrder()
+        cur.desc()
+        return cur
+    }
+}
+
 // MARK: - Condition
 
 extension Expr {
@@ -132,7 +183,7 @@ extension Expr {
         var column: Column
         var strategy: Order? = nil
         var nullStrategy: NullStratery? = nil
-        var sql: String {
+        public var sql: String {
             var chunk = "\(column.sql)"
             if let strategy = strategy {
                 chunk += " \(strategy.sql)"
@@ -170,13 +221,17 @@ extension Expr {
     }
 }
 
+extension Expr.OrderTerm: OrderTermConvertiable {
+    public func asOrder() -> Expr.OrderTerm { self }
+}
+
 // MARK: Column
 
 extension Expr {
     
     public struct Column: Expression {
         let name: String
-        var sql: String { name }
+        public var sql: String { name }
 
         init(_ name: String) {
             self.name = name
@@ -185,32 +240,12 @@ extension Expr {
 
 }
 
-// MARK: Aggregate Function
+extension Expr.Column: SelectTermConvertiable {
+    public func asSelect() -> Expr.Column { self }
+}
 
-extension Expr {
-    
-    /// - See Also: https://www.sqlite.org/lang_aggfunc.html
-    public enum AggregateFunction: Expression {
-        case avg(Column)
-        case count(Column)
-        case countAll
-        case max(Column)
-        case min(Column)
-        case sum(Column)
-        case total(Column)
-        
-        var sql: String {
-            switch self {
-            case .avg(let exp): return "avg(\(exp.sql))"
-            case .count(let exp): return "count(\(exp.sql))"
-            case .countAll: return "count(*)"
-            case .max(let exp): return "max(\(exp.sql))"
-            case .min(let exp): return "min(\(exp.sql))"
-            case .sum(let exp): return "sum(\(exp.sql))"
-            case .total(let exp): return "total(\(exp.sql))"
-            }
-        }
-    }
+extension Expr.Column: OrderTermConvertiable {
+    public func asOrder() -> Expr.OrderTerm { Expr.OrderTerm(column: name) }
 }
 
 // MARK: Transaction Mode

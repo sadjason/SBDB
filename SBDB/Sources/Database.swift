@@ -137,7 +137,6 @@ extension _RawStatement {
     }
 }
 
-
 public class Database: Identifiable {
 
     private var cachedStatements = [String: _RawStatement]()
@@ -167,7 +166,7 @@ public class Database: Identifiable {
     }
     
     private var lastErrorMessage: String {
-        // `sqlite3_errmsg(nil)` return "out of memory", so do not worry about `db`
+        // `sqlite3_errmsg(nil)` return "out of memory", so there is not need to worry about `db`
         String(cString: sqlite3_errmsg(pointer))
     }
     
