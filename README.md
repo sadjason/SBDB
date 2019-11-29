@@ -1,6 +1,6 @@
 # SBDB
 
-参考 FMDB，以学习 Swift 为目的写的 SQLite wrapper，支持 ORM。Just for fun
+参考 FMDB，以学习 Swift 为目的写的 SQLite wrapper，支持 ORM。
 
 ## 使用
 
