@@ -2,8 +2,8 @@
 //  Database.swift
 //  SBDB
 //
-//  Created by zhangwei on 2019/10/22.
-//  Copyright © 2019 ByteDance. All rights reserved.
+//  Created by SadJason on 2019/10/22.
+//  Copyright © 2019 SadJason. All rights reserved.
 //
 
 import Foundation

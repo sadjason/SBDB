@@ -2,8 +2,8 @@
 //  KeyPath+Addition.swift
 //  SBDB
 //
-//  Created by zhangwei on 2019/11/21.
-//  Copyright © 2019 ByteDance. All rights reserved.
+//  Created by SadJason on 2019/11/21.
+//  Copyright © 2019 SadJason. All rights reserved.
 //
 
 import Foundation

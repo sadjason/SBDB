@@ -2,8 +2,8 @@
 //  SBDBTests.swift
 //  SBDBTests
 //
-//  Created by zhangwei on 2019/11/2.
-//  Copyright © 2019 ByteDance. All rights reserved.
+//  Created by SadJason on 2019/11/2.
+//  Copyright © 2019 SadJason. All rights reserved.
 //
 
 import XCTest
