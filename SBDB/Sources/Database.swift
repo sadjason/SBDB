@@ -320,7 +320,12 @@ extension Database {
     }
     
     public func beginTransaction(withMode mode: Expr.TransactionMode = .deferred) throws {
-        if inExplicitTransaction { // 避免 transaction 嵌套
+        guard !inExplicitTransaction else {
+            // 避免 transaction 嵌套
+            assert(false, "in transaction now")
+            return
+        }
+        if inExplicitTransaction {
             return
         }
         try _beginTransaction(withMode: mode)

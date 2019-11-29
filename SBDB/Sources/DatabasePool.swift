@@ -38,8 +38,8 @@ extension DatabasePool {
 
     private func _setupWalMode(_ db: Database) throws {
 
-        // 1. set wal mode
-        // https://www.sqlite.org/wal.html
+        /// Set WAL mode
+        /// - See Also: https://www.sqlite.org/wal.html
 
         var ret: RowStorage?
         try db.exec(sql: "pragma journal_mode=wal;", withParams: nil) { (_, row, stop) in
@@ -94,20 +94,23 @@ extension DatabasePool {
         try workItem(db)
     }
 
-    /// 以非事务的方式访问数据库
+    /// 以显式事务的方式访问数据库
     ///
-    /// - Parameter workItem: 访问 database
-    func write(_ workItem: DatabaseWorkItem) throws {
-        try writeQueue.inDatabasae(execute: workItem)
-    }
-
-    /// 以事务的方式访问数据库
     /// - Parameter mode: 事务模式
     /// - Parameter workItem: 访问 database
     func write(
-        transaction mode: Expr.TransactionMode = .deferred,
-        execute workItem: DatabaseWorkItem
+        mode: Expr.TransactionMode,
+        execute workItem: TransactionWorkItem
     ) throws {
-        try writeQueue.inDatabasae(execute: workItem)
+        try writeQueue.inTransaction(mode: mode, execute: workItem)
+    }
+    
+    /// 以显式事务的方式访问数据库，使用 immediate 事务
+    ///
+    /// - Parameter workItem: 访问 database
+    func write(
+        execute workItem: TransactionWorkItem
+    ) throws {
+        try writeQueue.inTransaction(mode: .immediate, execute: workItem)
     }
 }

@@ -86,7 +86,8 @@ let conv = buildConversation(name: "conv_0")
 try db.insert(conv)
 
 // 批量插入
-try db.insert((1...100).map { index in buildParticipant(name: "name_\(index)", age: index, convId: conv.id) })
+let participants = (1...100).map { index in buildParticipant(name: "name_\(index)", age: index, convId: conv.id) }
+try db.insert(participants)
 ```
 
 ### Deleting
@@ -156,8 +157,8 @@ _ = try db.selectOneColumn(from: Participant.self, on: age.min())
 let queue = DatabaseQueue(path: path)
 
 try? dbQueue.inTransaction(mode: .immediate, execute: { (db, rollback) in
-    (0..<5000).forEach { (_) in
-        try? buildConversation().save(in: db)
+    (0..<5000).forEach { index in
+        try? db.insert(buildParticipant(name: "name_\(index)", age: index, convId: conv.id) )
     }
 })
 ```
@@ -165,3 +166,13 @@ try? dbQueue.inTransaction(mode: .immediate, execute: { (db, rollback) in
 ### DatabasePool
 
 类似于 FMDB 的 FMDatabasePool，DatabasePool 维护一个连接池，提供更高的并发性；只是 DatabasePool 默认使用 wal 模式，并发读，串行写。
+
+```swift
+try pool.write { (db, _) in
+    if let p = try db.selectOne(from: Participant.self) {
+        try db.update(Participant.self, where: userId == p.userId) { assign in
+            assign(name, "the one")
+        }
+    }
+}
+```

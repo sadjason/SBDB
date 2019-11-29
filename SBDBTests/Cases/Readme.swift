@@ -30,12 +30,12 @@ class Readme: XCTestCase {
         }
     }
     
-    func testDropingTable() throws {
-        let db = try Util.openDatabase()
-        
-        try db.dropTable(Conversation.self)
-        try db.dropTable(Participant.self, ifExists: true)
-    }
+//    func testDropingTable() throws {
+//        let db = try Util.openDatabase()
+//
+//        try db.dropTable(Conversation.self)
+//        try db.dropTable(Participant.self, ifExists: true)
+//    }
     
     func buildConversation(name: String) -> Conversation {
         Conversation.init(id: UUID().uuidString, name: name)
@@ -76,6 +76,7 @@ class Readme: XCTestCase {
         let db = try Util.openDatabase()
         
         let (age, name, userId, convId) = (\Participant.age, \Participant.name, \Participant.userId, \Participant.convId)
+        
         
 //        print(try db.select(from: Participant.self))
 //        print(try db.select(from: Participant.self, where: age >= 30))
