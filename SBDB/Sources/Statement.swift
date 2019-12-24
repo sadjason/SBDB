@@ -99,10 +99,11 @@ extension Expr.Column {
         }
         
         @discardableResult
-        public func primaryKey(
+        public func setPrimary(
             autoIncrement: Bool = false,
             onConflict: Expr.Conflict? = nil,
-            order: Expr.Order? = nil) -> Self
+            order: Expr.Order? = nil
+        ) -> Self
         {
             if autoIncrement {
                 guard type == .integer else {
@@ -117,30 +118,30 @@ extension Expr.Column {
             constraints[.primary] = .primaryKey(order, onConflict, autoIncrement)
             // set `not null` for primary key
             if constraints[.notNull] == nil {
-                _ = notNull()
+                _ = setNotNull()
             }
             return self
         }
         
         @discardableResult
-        public func primaryKey(autoIncrement: Bool) -> Self {
-            primaryKey(autoIncrement: autoIncrement, onConflict: nil, order: nil)
+        public func setPrimary(autoIncrement: Bool) -> Self {
+            setPrimary(autoIncrement: autoIncrement, onConflict: nil, order: nil)
         }
 
         @discardableResult
-        public func notNull(onConflict: Expr.Conflict? = nil) -> Self {
+        public func setNotNull(onConflict: Expr.Conflict? = nil) -> Self {
             constraints[.notNull] = .notNull(onConflict)
             return self
         }
 
         @discardableResult
-        public func unique(onConflict: Expr.Conflict? = nil) -> Self {
+        public func setUnique(onConflict: Expr.Conflict? = nil) -> Self {
             constraints[.unique] = .unique(onConflict)
             return self
         }
 
         @discardableResult
-        public func collate(name: Expr.Collate? = nil) -> Self {
+        public func setCollate(name: Expr.Collate? = nil) -> Self {
             constraints[.collate] = .collate(name!)
             return self
         }

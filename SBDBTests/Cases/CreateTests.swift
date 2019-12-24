@@ -23,9 +23,9 @@ class CreateTests: XCTestCase {
         try db.dropTable(T1.self)
         print(Util.databasePath)
         try db.createTable(T1.self, options: .ifNotExists) { tb in
-            tb.column(forName: "id")?.primaryKey().notNull().unique()
-            tb.column(forName: "age")?.notNull().unique()
-            tb.column(forName: "name")?.notNull()
+            tb.column(forName: "id")?.setPrimary().setNotNull().setUnique()
+            tb.column(forName: "age")?.setNotNull().setUnique()
+            tb.column(forName: "name")?.setNotNull()
         }
     }
     
@@ -50,7 +50,7 @@ class CreateTests: XCTestCase {
         try db.dropTable(T2.self)
         print(Util.databasePath)
         try db.createTable(T2.self, options: .ifNotExists) { tb in
-            tb.column(forKeyPath: \T2.id)?.primaryKey(autoIncrement: true)
+            tb.column(forKeyPath: \T2.id)?.setPrimary(autoIncrement: true)
         }
     }
     

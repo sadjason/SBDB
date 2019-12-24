@@ -23,7 +23,7 @@ public struct TableCreation<T: TableDecodable> {
         try TableColumnDecoder.default.decode(type.self).values.forEach { structure in
             let col = stmt.addColumn(structure.name, type: structure.type)
             if structure.nonnull {
-                col.notNull()
+                col.setNotNull()
             }
         }
     }

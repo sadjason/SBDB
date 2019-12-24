@@ -18,9 +18,9 @@ class Readme: XCTestCase {
         
         try db.createTable(Conversation.self, options: .ifNotExists) { tb in
             // set primary: single comumn
-            tb.column(forKeyPath: \Conversation.id)?.primaryKey().unique()
+            tb.column(forKeyPath: \Conversation.id)?.setPrimary().setUnique()
             // set not null
-            tb.column(forKeyPath: \Conversation.name)?.notNull()
+            tb.column(forKeyPath: \Conversation.name)?.setNotNull()
         }
 
         try db.createTable(Participant.self, options: .ifNotExists) { tb in
