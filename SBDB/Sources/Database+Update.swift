@@ -67,8 +67,7 @@ extension Database {
         withMode mode: UpdateMode,
         where condition: Expr.Condition? = nil,
         assign: (Stmt.Update.AssignHandler<T>) -> Void
-    ) throws
-    {
+    ) throws {
         var assignment = UpdateAssignment()
         
         let handler: Stmt.Update.AssignHandler<T> = { assignment[$0.stringValue] = $1}
@@ -95,7 +94,10 @@ extension Database {
         try Stmt.Delete(table: tableName, where: condition).exec(in: self)
     }
     
-    public func delete(from table: CustomTableNameConvertible.Type, where condition: Expr.Condition? = nil) throws {
+    public func delete(
+        from table: CustomTableNameConvertible.Type,
+        where condition: Expr.Condition? = nil
+    ) throws {
         try Stmt.Delete(table: table.tableName, where: condition).exec(in: self)
     }
 }

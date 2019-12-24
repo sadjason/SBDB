@@ -123,9 +123,7 @@ extension Expr.Column {
         }
         
         @discardableResult
-        public func primaryKey(
-            autoIncrement: Bool) -> Self
-        {
+        public func primaryKey(autoIncrement: Bool) -> Self {
             primaryKey(autoIncrement: autoIncrement, onConflict: nil, order: nil)
         }
 
@@ -374,7 +372,7 @@ extension Stmt {
                 values.append(value)
             }
             chunk += "(\(keys.joined(separator: ",")))"
-            chunk += " values (\(Array(repeating: ParameterPlaceholder, count: keys.count).joined(separator: ",")))"
+            chunk += " values (\(Array(repeating: paramPlaceholder, count: keys.count).joined(separator: ",")))"
             
             sql = chunk
             params = values
@@ -463,7 +461,10 @@ extension Stmt.Update {
     var sql: String {
         var chunk = "\(mode.sql) \(tableName)"
 
-        let assigns = assignment.keys.sorted().map { "\($0) = \(ParameterPlaceholder)" }.joined(separator: ",")
+        let assigns = assignment.keys
+            .sorted()
+            .map { "\($0) = \(paramPlaceholder)" }
+            .joined(separator: ",")
         chunk += " set \(assigns)"
 
         if let cond = whereCondition {

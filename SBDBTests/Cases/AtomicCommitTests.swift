@@ -137,7 +137,7 @@ class AtomicCommitTests: XCTestCase {
     ///   * `begin deferred` 命令的执行永远都不会返回 SQLITE_BUSY 错误（这一点应该比较难验证，case 只是进来复现）
     func testBeginDeferred() throws {
         DispatchQueue.global().async {
-            try? Util.createDatabaseQueue().inTransaction(mode: .immediate) { (db, _) in
+            try? Util.createDatabaseQueue().executeTransaction(mode: .immediate) { (db, _) in
                 try? db.insert(Util.generateStudent())
                 Thread.sleep(forTimeInterval: 1.0)
             }

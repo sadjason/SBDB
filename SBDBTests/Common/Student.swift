@@ -89,7 +89,7 @@ extension Util {
 
 extension Util {
     static func createStudentTable() throws {
-        try createDatabaseQueue().inDatabasae { db in
+        try createDatabaseQueue().execute { db in
             try? db.createTable(Student.self)
         }
     }

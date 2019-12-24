@@ -10,7 +10,7 @@ import Foundation
 
 public enum Expr {}
 
-let ParameterPlaceholder = "?"
+let paramPlaceholder = "?"
 
 /// https://www.sqlite.org/lang_expr.html
 
@@ -39,7 +39,7 @@ extension ParameterExpression {
         sql.enumerated().map { (index, ch) -> String in
             let s = String(ch)
             // replace placeholder with parameter
-            if s == ParameterPlaceholder,
+            if s == paramPlaceholder,
                 index < (params?.count ?? 0),
                 let param = params?[index]
             {
@@ -50,7 +50,7 @@ extension ParameterExpression {
     }
 
     func debugCheckParameterValid() -> Bool {
-        sql.enumerated().filter { String($1) == ParameterPlaceholder }.count == (params?.count ?? 0)
+        sql.enumerated().filter { String($1) == paramPlaceholder }.count == (params?.count ?? 0)
     }
 }
 
@@ -113,7 +113,7 @@ extension Expr {
         var sql: String
         var params: [ColumnValueConvertible]?
         
-        static var `true`: Condition = Condition(sql: "true", params: nil)
+        static var `true` = Condition(sql: "true", params: nil)
     }
 }
 
@@ -305,27 +305,27 @@ extension Expr {
 extension Expr.Column {
 
     static func > (column: Self, value: ColumnValueConvertible) -> Expr.Condition {
-        Expr.Condition(sql: "\(column.name) > \(ParameterPlaceholder)", params: [value])
+        Expr.Condition(sql: "\(column.name) > \(paramPlaceholder)", params: [value])
     }
 
     static func >= (column: Self, value: ColumnValueConvertible) -> Expr.Condition {
-        Expr.Condition(sql: "\(column.name) >= \(ParameterPlaceholder)", params: [value])
+        Expr.Condition(sql: "\(column.name) >= \(paramPlaceholder)", params: [value])
     }
 
     static func < (column: Self, value: ColumnValueConvertible) -> Expr.Condition {
-        Expr.Condition(sql: "\(column.name) < \(ParameterPlaceholder)", params: [value])
+        Expr.Condition(sql: "\(column.name) < \(paramPlaceholder)", params: [value])
     }
 
     static func <= (column: Self, value: ColumnValueConvertible) -> Expr.Condition {
-        Expr.Condition(sql: "\(column.name) <= \(ParameterPlaceholder)", params: [value])
+        Expr.Condition(sql: "\(column.name) <= \(paramPlaceholder)", params: [value])
     }
 
     static func == (column: Self, value: ColumnValueConvertible) -> Expr.Condition {
-        Expr.Condition(sql: "\(column.name) == \(ParameterPlaceholder)", params: [value])
+        Expr.Condition(sql: "\(column.name) == \(paramPlaceholder)", params: [value])
     }
 
     static func != (column: Self, value: ColumnValueConvertible) -> Expr.Condition {
-        Expr.Condition(sql: "\(column.name) != \(ParameterPlaceholder)", params: [value])
+        Expr.Condition(sql: "\(column.name) != \(paramPlaceholder)", params: [value])
     }
 }
 
@@ -360,23 +360,43 @@ extension Expr.Column {
 
 extension Expr.Column {
     func `in`(_ values: [ColumnValueConvertible]) -> Expr.Condition {
-        let paramPlaceholders = Array<String>(repeating: ParameterPlaceholder, count: values.count).joined(separator: ",")
+        let paramPlaceholders = Array<String>(
+            repeating: paramPlaceholder,
+            count: values.count
+        ).joined(separator: ",")
         let sql = "\(name) in (\(paramPlaceholders))"
         return Expr.Condition(sql: sql, params: values)
     }
 
     func notIn(_ values: [ColumnValueConvertible]) -> Expr.Condition {
-        let paramPlaceholders = Array<String>(repeating: ParameterPlaceholder, count: values.count).joined(separator: ",")
+        let paramPlaceholders = Array<String>(
+            repeating: paramPlaceholder,
+            count: values.count
+        ).joined(separator: ",")
         let sql = "\(name) not in (\(paramPlaceholders))"
         return Expr.Condition(sql: sql, params: values)
     }
 
-    func between(_ value1: ColumnValueConvertible, and value2: ColumnValueConvertible) -> Expr.Condition {
-        Expr.Condition(sql: "\(name) between \(ParameterPlaceholder) and \(ParameterPlaceholder)", params: [value1, value2])
+    func between(
+        _ value1: ColumnValueConvertible,
+        and value2: ColumnValueConvertible
+    ) -> Expr.Condition
+    {
+        Expr.Condition(
+            sql: "\(name) between \(paramPlaceholder) and \(paramPlaceholder)",
+            params: [value1, value2]
+        )
     }
 
-    func notBetween(_ value1: ColumnValueConvertible, and value2: ColumnValueConvertible) -> Expr.Condition {
-        Expr.Condition(sql: "\(name) not between \(ParameterPlaceholder) and \(ParameterPlaceholder)", params: [value1, value2])
+    func notBetween(
+        _ value1: ColumnValueConvertible,
+        and value2: ColumnValueConvertible
+    ) -> Expr.Condition
+    {
+        Expr.Condition(
+            sql: "\(name) not between \(paramPlaceholder) and \(paramPlaceholder)",
+            params: [value1, value2]
+        )
     }
 
     func isNull() -> Expr.Condition {

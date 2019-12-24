@@ -71,14 +71,22 @@ extension _RawStatement {
         case .integer(let num):
             ret = sqlite3_bind_int64(stmtPointer, index, num)
         case .text(let str):
-            ret = sqlite3_bind_text(stmtPointer, index, str, Int32(str.utf8.count), SQLITE_TRANSIENT)
+            ret = sqlite3_bind_text(stmtPointer,
+                                    index,
+                                    str,
+                                    Int32(str.utf8.count),
+                                    SQLITE_TRANSIENT)
         case .real(let real):
             ret = sqlite3_bind_double(stmtPointer, index, real)
         case .null:
             ret = sqlite3_bind_null(stmtPointer, index)
         case .blob(let data):
             ret = data.withUnsafeBytes {
-                sqlite3_bind_blob(stmtPointer, index, $0.baseAddress, Int32($0.count), SQLITE_TRANSIENT)
+                sqlite3_bind_blob(stmtPointer,
+                                  index,
+                                  $0.baseAddress,
+                                  Int32($0.count),
+                                  SQLITE_TRANSIENT)
             }
         }
         guard ret == SQLITE_OK else {

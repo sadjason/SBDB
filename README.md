@@ -156,11 +156,11 @@ _ = try db.selectOneColumn(from: Participant.self, on: age.min())
 ```swift
 let queue = DatabaseQueue(path: path)
 
-try? dbQueue.inTransaction(mode: .immediate, execute: { (db, rollback) in
+try? dbQueue.executeTransaction(mode: .immediate) { (db, rollback) in
     (0..<5000).forEach { index in
         try? db.insert(buildParticipant(name: "name_\(index)", age: index, convId: conv.id) )
     }
-})
+}
 ```
 
 ### DatabasePool

@@ -51,7 +51,7 @@ class TransactionTests: XCTestCase {
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
             let queue = Util.createDatabaseQueue()
             do {
-                try queue.inTransaction(mode: .immediate) { (db, _) in
+                try queue.executeTransaction(mode: .immediate) { (db, _) in
                     do {
                         try db.insert(Util.generateStudent())
                     } catch { self.neverExecute() }
@@ -85,7 +85,7 @@ class TransactionTests: XCTestCase {
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
             let queue = Util.createDatabaseQueue()
             do {
-                try queue.inTransaction(mode: .immediate) { (db, _) in
+                try queue.executeTransaction(mode: .immediate) { (db, _) in
                     do {
                         try db.insert(Util.generateStudent())
                     } catch { self.noError() }
@@ -104,7 +104,7 @@ class TransactionTests: XCTestCase {
         DispatchQueue.global().asyncAfter(deadline: .now() + 1.2) {
             let queue = Util.createDatabaseQueue()
             do {
-                try queue.inTransaction(mode: .immediate) { (db, _) in
+                try queue.executeTransaction(mode: .immediate) { (db, _) in
                     do {
                         try db.insert(Util.generateStudent())
                     } catch { self.neverExecute() }
@@ -138,7 +138,7 @@ class TransactionTests: XCTestCase {
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) {
             let queue = Util.createDatabaseQueue()
             do {
-                try queue.inTransaction(mode: .immediate) { (db, _) in
+                try queue.executeTransaction(mode: .immediate) { (db, _) in
                     do {
                         try db.insert(Util.generateStudent())
                     } catch { self.neverExecute() }
@@ -157,7 +157,7 @@ class TransactionTests: XCTestCase {
         DispatchQueue.global().asyncAfter(deadline: .now() + 1.2) {
             let queue = Util.createDatabaseQueue()
             do {
-                try queue.inTransaction(mode: .immediate) { (db, _) in
+                try queue.executeTransaction(mode: .immediate) { (db, _) in
                     do {
                         try db.insert(Util.generateStudent())
                     } catch { self.neverExecute() }

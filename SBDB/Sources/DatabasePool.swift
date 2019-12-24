@@ -30,7 +30,7 @@ extension DatabasePool {
 
     private func _initWriteQueue() -> DatabaseQueue {
         let queue = DatabaseQueue(path: path, options: writeOptions)
-        try? queue.inDatabasae { (db) in
+        try? queue.execute { (db) in
             try? _setupWalMode(db)
         }
         return queue
@@ -84,7 +84,7 @@ extension DatabasePool {
     /// 此时获取的 database connection 是只读的，如果尝试进行写操作，会报错
     ///
     /// - Parameter workItem: 访问 database
-    func read(_ workItem: DatabaseWorkItem) throws {
+    func read(workItem: DatabaseWorkItem) throws {
         let db = try popReadDatabase()
         defer {
             DispatchQueue.global().async { [weak self] in
@@ -100,17 +100,15 @@ extension DatabasePool {
     /// - Parameter workItem: 访问 database
     func write(
         mode: Expr.TransactionMode,
-        execute workItem: TransactionWorkItem
+        workItem: TransactionWorkItem
     ) throws {
-        try writeQueue.inTransaction(mode: mode, execute: workItem)
+        try writeQueue.executeTransaction(mode: mode, workItem: workItem)
     }
     
     /// 以显式事务的方式访问数据库，使用 immediate 事务
     ///
     /// - Parameter workItem: 访问 database
-    func write(
-        execute workItem: TransactionWorkItem
-    ) throws {
-        try writeQueue.inTransaction(mode: .immediate, execute: workItem)
+    func write(workItem: TransactionWorkItem) throws {
+        try writeQueue.executeTransaction(mode: .immediate, workItem: workItem)
     }
 }

@@ -55,19 +55,26 @@ extension PartialKeyPath where Root: TableCodingKeyConvertiable {
         toColumn().notIn(values)
     }
     
-    func between(_ value1: ColumnValueConvertible, and value2: ColumnValueConvertible) -> Expr.Condition {
+    public func between(
+        _ value1: ColumnValueConvertible,
+        and value2: ColumnValueConvertible
+    ) -> Expr.Condition {
         toColumn().between(value1, and: value2)
     }
     
-    func notBetween(_ value1: ColumnValueConvertible, and value2: ColumnValueConvertible) -> Expr.Condition {
+    public func notBetween(
+        _ value1: ColumnValueConvertible,
+        and value2: ColumnValueConvertible
+    ) -> Expr.Condition
+    {
         toColumn().notBetween(value1, and: value2)
     }
     
-    func isNull() -> Expr.Condition {
+    public func isNull() -> Expr.Condition {
         toColumn().isNull()
     }
     
-    func notNull() -> Expr.Condition {
+    public func notNull() -> Expr.Condition {
         toColumn().notNull()
     }
 }

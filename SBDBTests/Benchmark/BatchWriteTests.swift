@@ -16,7 +16,7 @@ class BatchWriteTests: XCTestCase {
 
     override func setUp() {
         try? Util.createStudentTable()
-        try? Util.createDatabaseQueue().inDatabasae{ (db) in
+        try? Util.createDatabaseQueue().execute { (db) in
             try? db.delete(from: Student.self)
         }
     }
@@ -28,7 +28,7 @@ class BatchWriteTests: XCTestCase {
         Database.disableStatementCache = true
         let dbQueue = Util.createDatabaseQueue()
         self.measure {
-            try? dbQueue.inDatabasae { (db) in
+            try? dbQueue.execute { (db) in
                 (0..<5000).forEach { (_) in
                     try? db.insert(Util.generateStudent())
                 }
@@ -43,11 +43,11 @@ class BatchWriteTests: XCTestCase {
        Database.disableStatementCache = true
        let dbQueue = Util.createDatabaseQueue()
        self.measure {
-           try? dbQueue.inTransaction(mode: .immediate, execute: { (db, rollback) in
+           try? dbQueue.executeTransaction(mode: .immediate) { (db, rollback) in
                (0..<5000).forEach { (_) in
                    try? db.insert(Util.generateStudent())
                }
-           })
+           }
        }
    }
     
@@ -58,11 +58,11 @@ class BatchWriteTests: XCTestCase {
         Database.disableStatementCache = false
         let dbQueue = Util.createDatabaseQueue()
         self.measure {
-            try? dbQueue.inTransaction(mode: .immediate, execute: { (db, rollback) in
+            try? dbQueue.executeTransaction(mode: .immediate) { (db, rollback) in
                 (0..<5000).forEach { (_) in
                     try? db.insert(Util.generateStudent())
                 }
-            })
+            }
         }
     }
 

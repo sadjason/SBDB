@@ -279,7 +279,12 @@ extension Database {
         orderBy orderTerms: OrderTermConvertiable...
     ) throws -> [ColumnValueConvertible]
     {
-        try selectOneColumn(from: tableType.tableName, on: column, where: condition, orderBy: orderTerms)
+        try selectOneColumn(
+            from: tableType.tableName,
+            on: column,
+            where: condition,
+            orderBy: orderTerms
+        )
     }
     
     public func selectOneColumn<T: TableDecodable>(

@@ -36,8 +36,8 @@ private class _TableColumnDecoder: Decoder {
     var userInfo: [CodingUserInfoKey : Any] = [:]
     var container: _TableColumnContainer = [:]
 
-    public func container<Key>(keyedBy type: Key.Type)
-        throws -> KeyedDecodingContainer<Key> where Key : CodingKey
+    public func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key>
+    where Key : CodingKey
     {
         KeyedDecodingContainer(KeyedContainer<Key>(decoder: self, codingPath: codingPath))
     }

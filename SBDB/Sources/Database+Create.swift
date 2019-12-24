@@ -36,7 +36,10 @@ public struct TableCreation<T: TableDecodable> {
 
 extension TableCreation {
     
-    public mutating func setPrimaryKey(withColumns columns: [CreateTableColumn], onConflict: Expr.Conflict?) {
+    public mutating func setPrimaryKey(
+        withColumns columns: [CreateTableColumn],
+        onConflict: Expr.Conflict?
+    ) {
         stmt.setPrimaryKey(withColumns: columns, onConflict: onConflict)
     }
     
@@ -44,7 +47,10 @@ extension TableCreation {
         stmt.setPrimaryKey(withColumns: columnNames.map { CreateTableColumn($0) }, onConflict: nil)
     }
     
-    public mutating func setUnique(withColumns columns: [CreateTableColumn], onConflict: Expr.Conflict?) {
+    public mutating func setUnique(
+        withColumns columns: [CreateTableColumn],
+        onConflict: Expr.Conflict?
+    ) {
         stmt.setUnique(withColumns: columns, onConflict: onConflict)
     }
     
@@ -88,8 +94,7 @@ extension Database {
         _ tableType: T.Type,
         options: CreateTableOptions = [],
         closure: ((inout TableCreation<T>) -> Void)? = nil
-    ) throws
-    {
+    ) throws {
         var creation = try TableCreation(type: tableType.self, options: options)
         closure?(&creation)
         try creation.stmt.exec(in: self)
@@ -101,7 +106,9 @@ extension Database {
 
 extension Database {
     
-    public func dropTable<T: CustomTableNameConvertible>(_ tableType: T.Type, ifExists: Bool = true) throws {
+    public func dropTable<T: CustomTableNameConvertible>(
+        _ tableType: T.Type, ifExists: Bool = true
+    ) throws {
         try Stmt.DropTable(tableType.tableName, ifExists: ifExists).exec(in: self)
     }
     
@@ -119,8 +126,7 @@ extension Database {
         on table: String,
         columns: [CreateTableColumn],
         options: CreateIndexOptions = [.ifNotExists, .unique]
-    ) throws
-    {
+    ) throws {
         var stmt = Stmt.CreateIndex(name: name, table: table, options: options)
         stmt.columns = columns
         try exec(sql: stmt.sql, withParams: stmt.params)

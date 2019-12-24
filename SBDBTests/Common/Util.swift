@@ -38,7 +38,7 @@ enum Util {
     
     public static func setJournalMode(_ mode: String, for queue: DatabaseQueue) throws {
         var modeStr = "unknown"
-        try queue.inDatabasae { (db) in
+        try queue.execute { (db) in
             var ret: RowStorage?
             try? db.exec(sql: "pragma journal_mode=\(mode);", withParams: nil) { (_, row, stop) in
                 ret = row

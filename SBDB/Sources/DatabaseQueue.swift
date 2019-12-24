@@ -50,11 +50,11 @@ final public class DatabaseQueue {
             throw SQLiteError.misuse("avoid deadlock")
         }
     }
-
+    
     /// 非事务访问数据库
     ///
     /// - Parameter workItem: The work item to be invoked on the queue
-    func inDatabasae(execute workItem: DatabaseWorkItem) throws {
+    func execute(_ workItem: DatabaseWorkItem) throws {
         try checkQueue()
 
         try queue.sync {
@@ -68,9 +68,9 @@ final public class DatabaseQueue {
     /// - Parameter mode: transaction mode
     /// - Parameter workItem: The work item to be invoked on the queue
     /// - See Also: https://www.sqlite.org/lang_transaction.html
-    func inTransaction(
+    func executeTransaction(
         mode: Expr.TransactionMode = .deferred,
-        execute workItem: TransactionWorkItem
+        workItem: TransactionWorkItem
     ) throws
     {
         try checkQueue()

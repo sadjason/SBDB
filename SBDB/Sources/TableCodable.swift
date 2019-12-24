@@ -52,10 +52,8 @@ private class _TableEncoder: Encoder {
 
     public var userInfo: [CodingUserInfoKey : Any] = [:]
 
-    public func container<Key>(
-        keyedBy type: Key.Type
-    ) -> KeyedEncodingContainer<Key>
-        where Key : CodingKey
+    public func container<Key>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key>
+    where Key : CodingKey
     {
         let keyedContainer = KeyedContainer<Key>(encoder: self, codingPath: codingPath)
         return KeyedEncodingContainer(keyedContainer)
@@ -169,7 +167,9 @@ extension _TableEncoder.KeyedContainer {
 
     mutating func encode<T>(_ value: T, forKey key: Key) throws where T : Encodable {
         guard let validValue = value as? ColumnValueConvertible else {
-            throw EncodingError.invalidValue(value, EncodingError.Context(codingPath: codingPath, debugDescription: "invalid value"))
+            let context = EncodingError.Context(codingPath: codingPath,
+                                                debugDescription: "invalid value")
+            throw EncodingError.invalidValue(value, context)
         }
         _encode(validValue.columnValue, forKey: key)
     }
@@ -241,7 +241,9 @@ extension _TableEncoder.KeyedContainer {
 
     mutating func encodeIfPresent<T>(_ value: T?, forKey key: Key) throws where T : Encodable {
         guard T.self is ColumnValueConvertible.Type else {
-            throw EncodingError.invalidValue(value ?? "nil", EncodingError.Context(codingPath: codingPath, debugDescription: "invalid value"))
+            let context = EncodingError.Context(codingPath: codingPath,
+                                                debugDescription: "invalid value")
+            throw EncodingError.invalidValue(value ?? "nil", context)
         }
         _encodeIfPresent(value as? ColumnValueConvertible, forKey: key)
     }
@@ -271,7 +273,9 @@ private class _TableDecoder: Decoder {
         self.storage = storage
     }
 
-    public func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
+    public func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key>
+    where Key : CodingKey
+    {
         KeyedDecodingContainer(KeyedContainer<Key>(decoder: self, codingPath: codingPath))
     }
 
@@ -310,11 +314,14 @@ private class _TableDecoder: Decoder {
         func _context(forError code: Int) -> DecodingError.Context {
             switch code {
             case keyNotFoundCode:
-                return DecodingError.Context(codingPath: codingPath, debugDescription: "key not found")
+                return DecodingError.Context(codingPath: codingPath,
+                                             debugDescription: "key not found")
             case typeMismatchCode:
-                return DecodingError.Context(codingPath: codingPath, debugDescription: "type mismatch")
+                return DecodingError.Context(codingPath: codingPath,
+                                             debugDescription: "type mismatch")
             default:
-                return DecodingError.Context(codingPath: codingPath, debugDescription: "unknown error")
+                return DecodingError.Context(codingPath: codingPath,
+                                             debugDescription: "unknown error")
             }
         }
 
@@ -442,7 +449,9 @@ extension _TableDecoder.KeyedContainer {
 
 extension _TableDecoder.KeyedContainer {
 
-    private func _decodeIfPresent<T: ColumnValueConvertible>(_ type: T.Type, forKey key: Key) throws -> T? {
+    private func _decodeIfPresent<T: ColumnValueConvertible>(_ type: T.Type, forKey key: Key)
+    throws -> T?
+    {
         let columnValue = try _columnValue(forKey: key)
         if let t = type.init(from: columnValue) {
             return t
